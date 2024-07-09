@@ -1,0 +1,47 @@
+Practice erp_h.ppt HW(D)
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK06
+*& erp_i.ppt 的練習D
+*&---------------------------------------------------------------------*
+
+REPORT  ZTSKAO_MK04 NO STANDARD PAGE HEADING
+                             LINE-SIZE 310
+                             LINE-COUNT 65(2)
+                             MESSAGE-ID zpp.
+
+* 使用的資料表
+TABLES: zyy85_emp.
+
+DATA: BEGIN OF it_EMP OCCURS 0,
+        EMPID LIKE ZYY85_EMP-EMPID,
+        DEPID LIKE ZYY85_EMP-DEPID,
+        NAME LIKE ZYY85_EMP-NAME,
+        CLASS LIKE ZYY85_EMP-CLASS,
+        SEX LIKE ZYY85_EMP-SEX,
+        BIRTH LIKE ZYY85_EMP-BIRTH,
+        ADDRESS LIKE ZYY85_EMP-ADDRESS,
+      END OF it_EMP.
+
+SELECT *
+FROM ZYY85_EMP
+INTO CORRESPONDING FIELDS OF it_EMP
+WHERE CLASS = 'A1'.
+
+  IF sy-subrc <> 0.
+    WRITE / 'There is no record in the table'.
+  ELSE.
+    WRITE / 'Table has at least one record'.
+
+    LOOP AT it_EMP.
+      WRITE: / it_EMP-EMPID,
+               it_EMP-DEPID,
+               it_EMP-NAME,
+               it_EMP-CLASS,
+               it_EMP-SEX,
+               it_EMP-BIRTH,
+               it_EMP-ADDRESS.
+    ENDLOOP.
+  ENDIF.
+ENDSELECT.

@@ -1,0 +1,237 @@
+Practice CreateTable、ReportTable Version2
+
+Selection texts:
+DNNO Order Number
+GROUP Group by Part
+LIST List Detail data
+MATNR Part Number
+ULDAT Upload Date
+
+Text symbols:
+001 A31
+002 A32
+003 Report Format
+
+
+*&---------------------------------------------------------------------*
+*& Table Name: ZTS_KAO01 ZTS_KAO02
+*&---------------------------------------------------------------------*
+
+REPORT  ZTSKAO_CREATETABLE2  NO STANDARD PAGE HEADING
+                             LINE-SIZE 310
+                             LINE-COUNT 65(2)
+                             MESSAGE-ID ZPP .
+
+* ==========使用到的 Table==========
+TABLES : ZTS_KAO01, ZTS_KAO02.
+
+* ==========Internal Table(包含table1, table2 所有欄位)==========
+DATA: BEGIN OF IT_KAO OCCURS 0,
+        MANDT LIKE ZTS_KAO01-MANDT,
+        DNNO LIKE ZTS_KAO01-DNNO,       "TDN Number
+        CUSTNO LIKE ZTS_KAO01-CUSTNO,   "Customer Number
+        ULDAT LIKE ZTS_KAO01-ULDAT,     "TDN Upload Date
+        DNLINE LIKE ZTS_KAO02-DNLINE,   "TDN Line
+        MATNR LIKE ZTS_KAO02-MATNR,     "Material No
+        C_DESC LIKE ZTS_KAO02-C_DESC,   "Order Line Memo
+        AUFNR LIKE ZTS_KAO02-AUFNR,     "Order Number
+        QTY LIKE ZTS_KAO02-QTY,         "Quantity
+        UDATE LIKE ZTS_KAO02-UDATE,     "Update Date
+        TEXT1(50) TYPE C,
+        TEXT2(50) TYPE C,
+        TEXT3(50) TYPE C,
+      END OF IT_KAO.
+
+* 儲存加總用的 Internal Table
+DATA: IT_KAO_SUM LIKE IT_KAO OCCURS 0 WITH HEADER LINE.
+
+
+*---------------------------------------------------------------------*
+*                S E L E C T I O N - S C R E E N                      *
+*---------------------------------------------------------------------*
+
+* ==========區塊1==========
+SELECTION-SCREEN BEGIN OF BLOCK BOX1 WITH FRAME.
+
+* -----讓A31 A32兩個 RadioButton在同一排呈現(非上下)-----
+SELECTION-SCREEN BEGIN OF LINE.
+
+* -----A31 Radio Button 選項-----
+PARAMETERS: A31 RADIOBUTTON GROUP CUST.
+SELECTION-SCREEN COMMENT  3(10)  TEXT-001.  "對應 Text Element(Text Symbols)
+
+* -----A31 Radio Button 選項-----
+PARAMETERS: A32 RADIOBUTTON GROUP CUST.
+SELECTION-SCREEN COMMENT  16(10)  TEXT-002. "對應 Text Element(Text Symbols)
+
+SELECTION-SCREEN END OF LINE.
+
+* -----Order Number 選項-----
+SELECT-OPTIONS DNNO FOR ZTS_KAO01-DNNO.
+
+* -----Upload Date 選項-----
+SELECT-OPTIONS ULDAT FOR ZTS_KAO01-ULDAT DEFAULT SY-DATUM.
+
+* -----Part Number 選項-----
+SELECT-OPTIONS MATNR FOR ZTS_KAO02-MATNR.
+
+SELECTION-SCREEN END OF BLOCK BOX1.
+
+
+* ==========區塊2==========
+SELECTION-SCREEN BEGIN OF BLOCK BOX2 WITH FRAME TITLE TEXT-003.
+PARAMETERS:
+  LIST RADIOBUTTON GROUP FMAT,      "List Detail data Radio Button 選項
+  GROUP RADIOBUTTON GROUP FMAT.     "Group by Part Radio Button 選項
+SELECTION-SCREEN END OF BLOCK BOX2.
+
+
+
+*-------------   S T A R T  O F  S E L E C T I O N ---------------
+START-OF-SELECTION.
+
+  PERFORM GETDATA.
+
+  IF LIST = 'X'.
+    PERFORM LISTDATA.
+
+  ELSEIF GROUP = 'X'.
+    PERFORM GROUPDATA.
+
+  ENDIF.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  GetData
+*&---------------------------------------------------------------------*
+*       查詢 ZTS_KAO01 和 ZTS_KAO02的所有資料
+*----------------------------------------------------------------------*
+FORM GETDATA.
+
+  DATA: CUSTRB LIKE ZTS_KAO01-CUSTNO.
+
+  " 判定是查詢 A31 A32
+  IF A31 = 'X'.
+    CUSTRB = 'A31'.
+
+  ELSEIF A32 = 'X'.
+    CUSTRB = 'A32'.
+
+  ENDIF.
+
+
+  " 查詢 ZTS_KAO01 和 ZTS_KAO02的所有資料
+  SELECT *
+  FROM ZTS_KAO01 AS A
+  INNER JOIN ZTS_KAO02 AS B ON A~MANDT = B~MANDT AND A~DNNO = B~DNNO
+  INTO CORRESPONDING FIELDS OF TABLE IT_KAO
+  WHERE A~DNNO IN DNNO AND
+        A~ULDAT IN ULDAT AND
+        B~MATNR IN MATNR AND
+        A~CUSTNO = CUSTRB.
+
+  "-----無資料-----
+  IF SY-SUBRC <> 0.
+    MESSAGE s000 WITH 'No Data Found'.
+    "WRITE: / 'No Data Found'.
+    LEAVE LIST-PROCESSING.
+  ENDIF.
+
+ENDFORM.                    "GetData
+
+
+
+*&---------------------------------------------------------------------*
+*&      Form  ListData
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM LISTDATA.
+
+  "-----印出標題-----
+  WRITE: /1(10) 'CustomerNO' COLOR 1,       "CUSTNO
+          13(8) 'TDNUDate' COLOR 2,         "ULDAT
+          25(16) 'TDN Number' COLOR 3,      "DNNO
+          43(12) 'TDN Line' COLOR 4,        "DNLINE
+          57(18) 'MaterialNo' COLOR 5,      "MATNR
+          77(40) 'OrderLineMemo' COLOR 6,   "C_DESC
+          119(12) 'OrderNo' COLOR 1,        "AUFNR
+          133(18) 'Quantity' COLOR 2,       "QTY
+          152(50) 'Text1' COLOR 3.
+  ULINE.
+
+  LOOP AT IT_KAO.
+
+    " ==========Text1 放值==========
+    IF IT_KAO-QTY <= 10 AND IT_KAO-TEXT1 = ' '.
+      IT_KAO-TEXT1 = 'S'.
+      MODIFY IT_KAO
+      TRANSPORTING TEXT1
+      WHERE MANDT = IT_KAO-MANDT AND DNNO = IT_KAO-DNNO.
+
+    ELSEIF IT_KAO-QTY > 10 AND IT_KAO-QTY < 100 AND IT_KAO-TEXT1 = ' '.
+      IT_KAO-TEXT1 = 'M'.
+      MODIFY IT_KAO
+      TRANSPORTING TEXT1
+      WHERE MANDT = IT_KAO-MANDT AND DNNO = IT_KAO-DNNO.
+
+    ELSEIF IT_KAO-QTY > 100 AND IT_KAO-TEXT1 = ' '.
+      IT_KAO-TEXT1 = 'L'.
+      MODIFY IT_KAO
+      TRANSPORTING TEXT1
+      WHERE MANDT = IT_KAO-MANDT AND DNNO = IT_KAO-DNNO.
+    ENDIF.
+
+
+    "==========列印 Internal Table 資料==========
+    WRITE: / IT_KAO-CUSTNO UNDER 'CustomerNO',
+             IT_KAO-ULDAT UNDER 'TDNUDate',
+             IT_KAO-DNNO UNDER 'TDN Number',
+             IT_KAO-DNLINE UNDER 'TDN Line',
+             IT_KAO-MATNR UNDER 'MaterialNo',
+             IT_KAO-C_DESC UNDER 'OrderLineMemo',
+             IT_KAO-AUFNR UNDER 'OrderNo',
+             IT_KAO-QTY UNDER 'Quantity',
+             IT_KAO-TEXT1 UNDER 'TEXT1'.
+
+  ENDLOOP.
+ENDFORM.                    "LISTDATA
+
+
+*&---------------------------------------------------------------------*
+*&      Form  GROUPDATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM GROUPDATA.
+
+  "-----印出標題-----
+  WRITE: /1(10) 'CustomerNO' COLOR 1,
+          13(18) 'MaterialNo' COLOR 2,
+          33(18) 'Quantity' COLOR 3.
+  ULINE.
+
+  " 把 IT_KAO 要加總的欄位值 傳遞給 IT_KAO_SUM
+  LOOP AT IT_KAO.
+
+    CLEAR IT_KAO_SUM.
+
+    " 欄位的值 傳遞給 IT_KAO_SUM
+    IT_KAO_SUM-CUSTNO = IT_KAO-CUSTNO.
+    IT_KAO_SUM-MATNR = IT_KAO-MATNR.
+    IT_KAO_SUM-QTY = IT_KAO-QTY.
+
+    " 進行加總方法
+    COLLECT IT_KAO_SUM.
+  ENDLOOP.
+
+  " 將加總的值透過 IT_KAO_SUM 列印出來
+  LOOP AT IT_KAO_SUM.
+
+    "==========列印 Internal Table 資料==========
+    WRITE: / IT_KAO_SUM-CUSTNO UNDER 'CustomerNO',
+             IT_KAO_SUM-MATNR UNDER 'MaterialNo',
+             IT_KAO_SUM-QTY UNDER 'Quantity'.
+
+  ENDLOOP.
+ENDFORM.                    "GROUPDATA

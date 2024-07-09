@@ -1,0 +1,165 @@
+Practice Write Clear _ABAP(3).ppt
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK03
+*& 參考文件: ABAP(3).ppt
+*&---------------------------------------------------------------------*
+
+REPORT  ZTSKAO_MK03.
+
+
+*&---------------------------------------------------------------------*
+*&  列印語法
+*&---------------------------------------------------------------------*
+WRITE '------列印語法-----'.
+SKIP.
+
+* 列印文字
+WRITE: 'AAA'.
+
+* 空一行之後 列印文字
+WRITE: /'BBB'.
+
+* 定義資料型態並賦予值，之後列印出該值內容
+DATA ab_text(10) TYPE C VALUE 'AAA和BBB'.
+WRITE / ab_text.
+SKIP.
+
+* 列印資料並附上顏色(COLOR可以透過數字改變)
+WRITE: 'CCC' COLOR 3.
+SKIP.
+
+* 列印多個值，數字表示從第幾個位置後開始列印
+WRITE: 2'DDD',
+       7'EEE'.
+SKIP.
+
+* 列印多個值，數字表示佔用幾格，最後空一格繼續列印
+WRITE: (4) 'FFF',
+       (4) 'GGG'.
+ULINE.
+
+*&---------------------------------------------------------------------*
+*&  初始化
+*&---------------------------------------------------------------------*
+WRITE '------初始化-----'.
+SKIP.
+
+* --------第一種用法-------
+DATA: itab1 TYPE C OCCURS 0 WITH HEADER LINE.
+
+* 帶表頭行時只清空表頭行,不帶表頭行時清空整個內表.
+CLEAR itab1.
+
+* -------第二種用法-------
+DATA: BEGIN OF itab2 OCCURS 0,
+        Text1(8) TYPE C,
+        Text2(6) TYPE C,
+        Text3(6) TYPE C,
+      END OF itab2.
+
+* 賦予值
+itab2-Text1 = '第二種'.
+itab2-Text2 = '用法'.
+itab2-Text3 = '測試'.
+
+* 只清空整個內表對象數據.不清空表頭行.
+CLEAR itab2[].
+
+WRITE itab2.
+SKIP.
+
+* -------第三種用法-------
+* 宣告變數
+DATA test_text(10) TYPE C VALUE 'Hello Test'.
+
+* 清空變數資料
+CLEAR test_text.
+
+* 列印清空後的變數資料(用顏色明顯呈現)
+WRITE test_text COLOR 6.
+
+* -------第四種用法-------
+DATA:
+     BEGIN OF My_WorkArea,
+       Text1(10) TYPE C,
+       Text2(10) TYPE C,
+       Text3(10) TYPE C,
+     END OF My_WorkArea.
+
+My_WorkArea-Text1 = '第四種用法'.
+My_WorkArea-Text2 = 333.
+
+
+WRITE My_WorkArea COLOR 5.
+CLEAR My_WorkArea.
+* -------第五種用法-------
+DATA: itab3 TYPE C OCCURS 0 WITH HEADER LINE.
+
+WRITE itab3.
+
+*只清空整個內表對象數據.不清空表頭行.
+REFRESH itab3.
+REFRESH itab3[].
+
+* -------第六種用法-------
+DATA: BEGIN OF itab4 OCCURS 0,
+        Text1 TYPE C,
+        Text2 TYPE C,
+        Text3 TYPE C,
+      END OF itab4.
+
+FREE itab4.
+FREE itab4[].
+
+* -------第七種用法-------
+CHECK itab1[] IS INITIAL.
+IF itab1[] IS INITIAL.
+  WRITE 'itab1 是空的'.
+ENDIF.
+
+CHECK My_WorkArea IS INITIAL.
+SKIP.
+IF My_WorkArea IS INITIAL.
+  WRITE 'My_WorkArea 是空的'.
+ENDIF.
+
+
+*&---------------------------------------------------------------------*
+*&  給單一變數值
+*&---------------------------------------------------------------------*
+* 定義資料型態
+DATA: GGtext(15) TYPE C,
+      GGnum TYPE I.
+CLEAR: GGtext, GGnum.
+
+* 賦予值
+GGtext = 'Hello World!'.
+GGnum = 87.
+
+* 列印值
+WRITE: (10) GGtext COLOR 2,
+       /20 GGnum.
+ULINE.
+
+
+*&---------------------------------------------------------------------*
+*&  給 Work Area 值
+*&---------------------------------------------------------------------*
+
+* 定義 My_Work 的結構跟上面的 My_WorkArea相同
+DATA: My_Work LIKE My_WorkArea.
+
+CLEAR: MY_Work.
+
+* 給予 My_Work裡面的欄位值
+My_Work-Text1 = '給Work'.
+My_Work-Text2 = 'Area'.
+My_Work-Text3 = '值'.
+
+* 列印 My_Work的內容
+WRITE: My_Work-Text1,
+       My_Work-Text2,
+       My_Work-Text3.
+* 另一種寫法為 WRITE: My_Work.

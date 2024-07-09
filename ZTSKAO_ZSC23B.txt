@@ -1,0 +1,2675 @@
+Test SCI1052BP2
+
+
+REPORT  ZTSKAO_ZSC23B LINE-SIZE 130
+                      LINE-COUNT 65
+                      MESSAGE-ID ZSCC
+                      NO STANDARD PAGE HEADING.
+
+*--------------------------------------------------------------------*
+* Name      : Yuhsiang Kao
+* Date      : 2024/01/30
+* Transport : DEVK9B3ATL DEVK9B3AUG
+* Purpose   : 72J Cust PN Get From zmm08.
+*--------------------------------------------------------------------*
+* note end *
+
+*Data Declaration
+*--------------------------------------------------------------------*
+TABLES : AFKO, AFPO, AUFK, AFVC, CRHD, ZSC00, MAKT, RESB, ZSC18,
+         ZSD01, ZSC13, KNMT, ZSC21, MARA, ZSC20, ZSC12.
+
+
+*---------------   INCLUDE                         --------------------*
+INCLUDE :ZTSLEON_XML_INCLUDE.
+
+DATA: F_XML TYPE C. "DEVK9B1FZ7 output XML format flag
+
+DATA: BEGIN OF ITAB1 OCCURS  0,
+        AUFNR(8)          TYPE C,
+        MATNR(16)         TYPE C,
+        KDMAT(16)         TYPE C,
+        MODEL(8)          TYPE C,
+        MAKTX(40)         TYPE C,                           "5
+        PSMNG(10)         TYPE C,
+        GSTRS(10)         TYPE C,
+        GLTRS(10)         TYPE C,
+        DWERK(8)          TYPE C VALUE 'TW01',
+        ARBPL(8)          TYPE C,                           "10
+        LINE(10)          TYPE C,
+        S(3)              TYPE C VALUE 'YES',
+        DDATE(10)         TYPE C,
+        DTIME(8)          TYPE C,
+        BRGEW(10)         TYPE C,                           "15
+        CUBE(10)          TYPE C,      "For A88 - Richard 2002/10/22
+        AUART(4)          TYPE C,
+        UPC_CODE(25)      TYPE C,
+        EAN_CODE(14)      TYPE C,      "For ABO - Richard 2002/10/22
+        DRM_NO(16)        TYPE C,      "20 Richard 2001/06/13
+        DRM_LN(12)        TYPE C,      "Richard 2001/06/13
+        BTYPE(5)          TYPE C,      "Richard 2001/06/13
+*        btype(2)          TYPE c,      "Richard 2001/06/13
+*        btype_blank(3)    TYPE c,      "Richard 2002/10/24
+        REGION(10)        TYPE C,      "For A88 - Richard 2002/10/22
+        UPC_MODEL(35)     TYPE C,      "Richard 2001/10/22
+        PRODUCT_DESC1(35) TYPE C,      "Richard 2001/10/22
+        PRODUCT_DESC2(35) TYPE C,      "Richard 2001/10/22
+        PRODUCT_DESC3(35) TYPE C,      "Richard 2001/10/22
+        PRODUCT_DESC4(35) TYPE C,      "Richard 2001/10/22
+        OPTION(10)        TYPE C,      "Richard 2002/04/12
+        PRCTR(10)         TYPE C,      "30 Richard 2001/10/22
+        MTART(8)          TYPE C,      "Richard 2001/10/22
+*        kunnr(10)         TYPE c,       " DEVK9B0Q5I mark by DEVK9B0QYQ
+*        ext_txt(15)       type c, "mark by DEVK9B0Q5I , make B length the same as ZPPI03
+*        ext_txt(5)        TYPE c,     " DEVK9B0Q5I mark by
+        EXT_TXT(15)        TYPE C,     " DEVK9B0QYQ
+        KUNNR(12)         TYPE C,       " DEVK9B0QYQ
+        LCD_FLG(1)        TYPE C,                           "DEVK9B0SMK
+      END OF ITAB1.
+DATA: BEGIN OF ITAB1_XML OCCURS 0.
+        INCLUDE STRUCTURE ITAB1.
+DATA: NORMT(10) TYPE C.
+DATA: END OF ITAB1_XML.
+
+DATA: BEGIN OF ITAB1_A32 OCCURS 0,
+        AUFNR(8)          TYPE C ,
+        MATNR(16)         TYPE C,
+        KDMAT(16)         TYPE C,
+        MODEL(8)          TYPE C,
+        MAKTX(40)         TYPE C,                           "5
+        PSMNG(10)         TYPE C,
+        GSTRS(10)         TYPE C,
+        GLTRS(10)         TYPE C,
+        DWERK(8)          TYPE C VALUE 'TW01',
+        ARBPL(8)          TYPE C,                           "10
+        LINE(10)          TYPE C,
+        S(3)              TYPE C VALUE 'YES',
+        DDATE(10)         TYPE C,
+        DTIME(8)          TYPE C,
+        BRGEW(10)         TYPE C,                           "15
+        CUBE(10)          TYPE C,      "For A88 - Richard 2002/10/22
+        AUART(4)          TYPE C,
+        UPC_CODE(25)      TYPE C,
+        EAN_CODE(14)      TYPE C,      "For ABO - Richard 2002/10/22
+        DRM_NO(16)        TYPE C,      "20 Richard 2001/06/13
+        DRM_LN(12)        TYPE C,      "Richard 2001/06/13
+        BTYPE(5)          TYPE C,      "Richard 2001/06/13
+        REGION(10)        TYPE C,      "For A88 - Richard 2002/10/22
+*        upc_model(35)     TYPE c,      "Richard 2001/10/22
+        UPC_MODEL(60)     TYPE C,      " DEVK9B1IKL Gear 2014/04/15
+        PRODUCT_DESC1(60) TYPE C,
+        PRODUCT_DESC2(35) TYPE C,      "Richard 2001/10/22
+        PRODUCT_DESC3(35) TYPE C,      "Richard 2001/10/22
+        PRODUCT_DESC4(35) TYPE C,      "Richard 2001/10/22
+        OPTION(10)        TYPE C,      "Richard 2002/04/12
+        PRCTR(10)         TYPE C,      "30 Richard 2001/10/22
+        MTART(8)          TYPE C,      "Richard 2001/10/22
+        EXT_TXT(15)        TYPE C,     " DEVK9B0QYQ
+        KUNNR(12)         TYPE C,       " DEVK9B0QYQ
+        LCD_FLG(1)        TYPE C,                           "DEVK9B0SMK
+      END OF ITAB1_A32.
+
+DATA: BEGIN OF ITAB2 OCCURS 0,
+        AUFNR(8)        TYPE C,
+        AUART(4)        TYPE C,
+        MATNR(16)       TYPE C,
+        BDMNG(10)       TYPE C,
+        MAKTX(40)       TYPE C,
+        SFS_M_TYPE(3)   TYPE C,
+        SFS_CUST_PN(35) TYPE C,
+        SFS_SFIS_CTL(3) TYPE C,
+        MATKL(10)       TYPE C,
+        SFS_FEATURE(10) TYPE C,
+        BAUGR(16)       TYPE C,
+        ALPGR(2)        TYPE C,
+        SFS_DESC(35)    TYPE C,
+*        sfs_spec1(35)   TYPE c,   "DEVK9B04KV
+*        sfs_spec2(35)   TYPE c,   "DEVK9B04KV
+        SFS_SPEC1(50)   TYPE C,                             "DEVK9B04KV
+        SFS_SPEC2(50)   TYPE C,                             "DEVK9B04KV
+        WPTR(1)         TYPE C,        "By Richard 2001/06/12
+        DDATE(10)       TYPE C,
+        DTIME(8)        TYPE C,
+        SFS_CUST(10)    TYPE C,        "Richard 2001/08/23
+        SFS_VD_PN(16)   TYPE C,        "Richard 2001/09/04
+*        ext_txt(96)     type c, "make C length the same as ZPPI03
+*>>DEVK9B07ZC , the last 111 digits put normal C file item, for Spec3.
+*        ext_txt(111)     type c, "make C length the same as ZPPI03
+        PAR_M_TYPE(3)   TYPE C,        "Master part_mode
+        SUBCON(3)       TYPE C,        "Subcontract item
+        SFS_CUST_PN2(35) TYPE C,       "Sfisc_cust_no_2
+        SFS_SPEC3(50)    TYPE C,       "Sfisc_config_spec3
+        MODEL(11)        TYPE C,       "Model
+        EWAHR(06)        TYPE C,   "26  Consume Qty        "DEVK9A06PW
+        APSCTRL(03)      TYPE C,   "27  APS Control-Yes/No "DEVK9A06PW
+*<<DEVK9B07ZC
+        DELETE_FLAG      TYPE C, "DEVK9B2887, A31 non-FRC.
+      END OF ITAB2.
+DATA: BEGIN OF ITAB_CHK OCCURS 0,
+          AUFNR LIKE  ZSC21-AUFNR,
+          DDATE LIKE ZSC21-DDATE,
+          DTIME LIKE ZSC21-DTIME,
+       END OF ITAB_CHK.
+DATA: IT_ZSC21 LIKE ZSC21 OCCURS 0 WITH HEADER LINE.
+DATA : BEGIN OF IT_AFKO OCCURS 0,
+          AUFNR LIKE AFKO-AUFNR,
+          GSTRS LIKE AFKO-GSTRS,
+          GLTRS LIKE AFKO-GLTRS,
+          RSNUM LIKE AFKO-RSNUM,
+       END OF IT_AFKO.
+DATA : BEGIN OF IT_AFPO,
+          AUFNR LIKE AFPO-AUFNR,
+          MATNR LIKE AFPO-MATNR,
+          PSMNG LIKE AFPO-PSMNG,
+          DWERK LIKE AFPO-DWERK,
+          LGORT LIKE AFPO-LGORT,
+          NORMT LIKE MARA-NORMT,
+          MTART LIKE MARA-MTART,
+       END OF IT_AFPO.
+DATA : BEGIN OF IT_AUFK,
+          AUFNR LIKE AUFK-AUFNR,
+          AUART LIKE AUFK-AUART,
+          PRCTR LIKE AUFK-PRCTR,
+       END OF IT_AUFK.
+DATA : BEGIN OF IT_KNMT,
+          MATNR LIKE KNMT-MATNR,
+          KDMAT LIKE KNMT-KDMAT,
+       END OF IT_KNMT.
+DATA : BEGIN OF IT_ZSC12,
+          MATNR_P LIKE ZSC12-MATNR_P,
+          KDMAT_P LIKE ZSC12-KDMAT_P,
+       END OF IT_ZSC12.
+DATA : BEGIN OF IT_ZSC00,
+          WERKS           LIKE ZSC00-WERKS,"Richard 2001/08/03
+          DRM_CUST        LIKE ZSC00-DRM_CUST,"Richard 2001/08/03
+          DRM_DC          LIKE ZSC00-DRM_DC,"Richard 2001/08/03
+          DRM_NO          LIKE ZSC00-DRM_NO,"Richard 2001/08/03
+          DRM_LN          LIKE ZSC00-DRM_LN,
+          DRM_SEQ         LIKE ZSC00-DRM_SEQ,
+          DRM_BTO_TYPE(2),             "Richard 2001/08/03
+          DRM_CUST_PN     LIKE ZSC00-DRM_CUST_PN,
+          DRM_PROD_ORDER  LIKE ZSC00-DRM_PROD_ORDER,
+          DRM_COMPAL_PART LIKE ZSC00-DRM_COMPAL_PART,
+       END OF IT_ZSC00.
+
+DATA : BEGIN OF ITABT OCCURS 0,
+          SEL(1)    TYPE C,            "Richard 2001/11/16
+          AUFNR(12) TYPE C,
+*          matnr(16) TYPE c,
+          MATNR     LIKE KNMT-MATNR,
+          KDMAT(16) TYPE C ,
+          NORMT(8)  TYPE C,
+          MAKTX(40) TYPE C,
+          PSMNG(10) TYPE C,
+          GSTRS(10) TYPE C,
+          GLTRS(10) TYPE C,
+          AUART(4)  TYPE C,
+          MTART(8)  TYPE C,
+          PRCTR(10) TYPE C,
+          LGORT(4)  TYPE C,
+          RSNUM     LIKE AFKO-RSNUM,   "Richard Li 02/08/2001
+          DWERK     LIKE AFPO-DWERK,
+          MATNRO    LIKE AFPO-MATNR,   "Richard Li for ZSD01
+          BTYPE(5),                    "Richard Li 08/14/2001
+*          btype(2),                    "Richard Li 08/14/2001
+*          option(3) TYPE c ,           "Richard Li 04/12/2002
+       END OF ITABT.
+DATA BEGIN OF XBTCXPM OCCURS 1.
+        INCLUDE STRUCTURE  BTCXPM.
+DATA END OF XBTCXPM.
+
+DATA :  AUFNR LIKE AFKO-AUFNR,
+        MATNR(18) TYPE C,
+        BAUGR(18) TYPE C,
+        BRGEW(10) TYPE P DECIMALS 2,
+        MARKF(1) TYPE C VALUE 'X',
+        BDMNG(10) TYPE P DECIMALS 0,
+        NOMNG(10) TYPE P DECIMALS 0,
+        PSMNG(10) TYPE P DECIMALS 0,
+        WO_TYPE(4) TYPE C,
+        COMMAND LIKE SXPGCOLIST-NAME,
+        COMMANDB LIKE SXPGCOLIST-NAME,
+        COMMANDC LIKE SXPGCOLIST-NAME,
+        DSN2 LIKE RLGRAP-FILENAME,
+        DSN1 LIKE RLGRAP-FILENAME.
+DATA : F_ERROR.                        "By Richard 2001/04/23
+* Internal table for Production order data
+DATA: BEGIN OF XCAUFV OCCURS 1,
+        AUFNR LIKE CAUFV-AUFNR,
+        PLNBEZ LIKE CAUFV-PLNBEZ,
+        STLBEZ LIKE CAUFV-STLBEZ,
+        OBJNR LIKE CAUFV-OBJNR,
+        RSNUM LIKE CAUFV-RSNUM,
+        AUART LIKE CAUFV-AUART,        " added due to CR on 04/10/2000
+      END OF XCAUFV.
+*>>DEVK9B0SMK
+DATA: BEGIN OF IT_ZSC57_LCD OCCURS 0,
+        MATNR LIKE ZSC57-MATNR,
+      END OF IT_ZSC57_LCD.
+DATA: BEGIN OF LCD_RESB OCCURS 0 ,
+        AUFNR LIKE RESB-AUFNR,
+      END OF LCD_RESB.
+*<<DEVK9B0SMK
+
+*>>DEVK9B2887
+DATA: IT_ZPP78B LIKE ZPP78B OCCURS 0 WITH HEADER LINE.
+
+*<<DEVK9B2887
+DATA  V_DLV.
+DATA  V_REL.
+DATA  V_DEL.
+DATA  V_COM.
+DATA  V_TECO.
+DATA  AUART.
+DATA  CHK_AUFNR LIKE AFKO-AUFNR.
+DATA: BEGIN OF IT_ZSC13 OCCURS 0,      "By Richard 2001/05/24
+        MATNR_P LIKE ZSC12-MATNR_P,
+        KDMAT_P LIKE ZSC12-KDMAT_P,
+        MATNR_C LIKE ZSC13-MATNR_C,
+        KDMAT_C LIKE ZSC13-KDMAT_C,
+      END OF IT_ZSC13.
+DATA: WA_LOCK_ERR(1).                                       "Phase 2
+DATA: Z_COUNT TYPE I.
+*--------------------------------------------------------------------*
+* Selection Screen
+*--------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK S_VBELN1 WITH FRAME TITLE TEXT-S01.
+PARAMETERS : P_PWERK LIKE AFPO-DWERK   " MEMORY ID wrk
+                OBLIGATORY,
+             P_DWERKS LIKE AFPO-DWERK  " MEMORY ID wrk
+                OBLIGATORY,
+             P_KUNNR LIKE KNMT-KUNNR
+                DEFAULT 'C2A32US1' OBLIGATORY.
+SELECT-OPTIONS: S_AUART FOR AUFK-AUART
+                DEFAULT 'ZP01' OBLIGATORY.
+SELECT-OPTIONS: S_MATNR FOR MARA-MATNR.
+SELECT-OPTIONS: S_AUFNR FOR AFKO-AUFNR.
+SELECT-OPTIONS: S_FDATE FOR AFKO-GLTRS.
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN POSITION 33.
+SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN END OF BLOCK S_VBELN1.
+
+SELECTION-SCREEN BEGIN OF BLOCK S_VBELN2 WITH FRAME TITLE TEXT-S03.
+PARAMETERS : P_SKU    TYPE C DEFAULT 'X' RADIOBUTTON GROUP AA.
+PARAMETERS : P_MATKL LIKE MARA-MATKL
+   DEFAULT 'N32' OBLIGATORY.
+PARAMETERS : P_VKORG LIKE KNMT-VKORG MEMORY ID WK1
+   OBLIGATORY.
+PARAMETERS : P_VTWEG LIKE KNMT-VTWEG
+   DEFAULT '01' OBLIGATORY.
+PARAMETERS : P_85     TYPE C RADIOBUTTON GROUP AA.
+PARAMETERS : P_7172   TYPE C RADIOBUTTON GROUP AA.
+PARAMETERS : P_SMT    TYPE C RADIOBUTTON GROUP AA.
+PARAMETERS : P_ABOPAD TYPE C RADIOBUTTON GROUP AA.          "DEVK9B1EA8
+PARAMETERS : P_OTHER  TYPE C RADIOBUTTON GROUP AA.
+SELECTION-SCREEN END OF BLOCK S_VBELN2.
+SELECTION-SCREEN BEGIN OF BLOCK S_VBELN3 WITH FRAME TITLE TEXT-S02.
+PARAMETERS: P_RESEND TYPE C AS CHECKBOX.
+PARAMETERS: P_NOC    TYPE C AS CHECKBOX.
+SELECTION-SCREEN END OF BLOCK S_VBELN3.
+
+*--------------------------------------------------------------------*
+* START-OF-SELECTION
+*--------------------------------------------------------------------*
+START-OF-SELECTION.
+
+  IF P_RESEND = 'X' AND S_AUFNR[] IS INITIAL.
+    MESSAGE I000 WITH 'Must Assign Order No. for Resending!'.
+*  ELSEIF p_resend = '' AND p_noc = 'X' AND p_7172 = '' AND p_smt = ''. " DEVK9B0VDR 1.
+  ELSEIF P_RESEND = '' AND P_NOC = 'X' AND P_7172 = ''.         " DEVK9B0VDR 1.
+    MESSAGE I000 WITH 'No C File Is For Resending Only!'.
+  ELSE.
+    IF S_AUFNR[] IS INITIAL AND S_FDATE[] IS INITIAL.
+      MESSAGE I000 WITH 'Due Date & Order No. Can''t All be Blank!'.
+    ELSE.
+      WA_LOCK_ERR = 'N'.
+      PERFORM LOCKING_ZSC33 CHANGING WA_LOCK_ERR.
+      IF WA_LOCK_ERR = 'N'.
+        PERFORM DEFINE_FILENAME.
+        PERFORM DEFINE_FTP_COMMANMD.
+*>>DEVK9B0SMK
+*        IF p_kunnr CS 'A32' . " M:DEVK9B1AQG
+        IF P_KUNNR CS 'A32' OR P_KUNNR CS 'F32'.  " DEVK9B1AQG
+          PERFORM GET_LCD_ITEM.
+        ENDIF.
+*<<DEVK9B0SMK
+        IF P_SKU = 'X'.
+          PERFORM NORMAL_SKU.
+        ELSEIF P_85 = 'X'.
+          PERFORM P_85_SELECTION.
+*>>2006/10/26 Leon,Add 71 72 level item
+        ELSEIF P_7172 = 'X'.
+          PERFORM P_7172_SELECTION.
+*>>2006/10/26 Leon,Add 71 72 level item
+        ELSEIF P_OTHER = 'X' OR P_SMT = 'X'.
+          PERFORM OTHER_SELECTION.
+        ELSEIF P_ABOPAD = 'X'.
+          PERFORM PAD_SELECTION.
+        ENDIF.
+        IF ITABT[] IS INITIAL.
+          MESSAGE I000 WITH 'No Production Order Available!!'.
+        ELSE.
+
+          PERFORM WRITE_AND_SELECT.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+END-OF-SELECTION.
+
+AT USER-COMMAND.
+  PERFORM USER_COMMAND.
+
+*&--------------------------------------------------------------------*
+*&      Form  Normal_SKU
+*&--------------------------------------------------------------------*
+*       text
+*---------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*---------------------------------------------------------------------*
+FORM NORMAL_SKU.
+* >>> Richard 2002/01/31 Debug AV
+  DATA FLG_ERR_AV(1) TYPE C.
+* Richard 2002/01/31 Debug AV <<<
+  DATA: W_ZSC20 LIKE ZSC20.                                 "DEVK9B06QU
+
+* Get PP Order Numbers that have already been transfered
+  SELECT AUFNR DDATE DTIME
+     INTO CORRESPONDING FIELDS OF TABLE ITAB_CHK
+     FROM ZSC21
+     WHERE AUFNR NOT LIKE '0%'
+     ORDER BY AUFNR.
+* Get Production Plan Order Header
+  SELECT AUFNR GSTRS GLTRS RSNUM
+     INTO CORRESPONDING FIELDS OF TABLE IT_AFKO "PP Order Header
+     FROM AFKO
+     WHERE FTRMI <> '00000000'
+       AND GLTRS IN S_FDATE
+       AND AUFNR IN S_AUFNR.
+
+  LOOP AT IT_AFKO.
+    CHK_AUFNR = IT_AFKO-AUFNR.
+    SHIFT CHK_AUFNR LEFT DELETING LEADING '0'.
+    READ TABLE ITAB_CHK WITH KEY AUFNR = CHK_AUFNR
+       BINARY SEARCH.
+    IF    ( SY-SUBRC <> 0 AND P_RESEND = '' )
+       OR ( SY-SUBRC = 0 AND P_RESEND = 'X' ).
+      SELECT SINGLE A~AUFNR A~MATNR A~PSMNG A~DWERK A~LGORT
+                    B~NORMT B~MTART
+         INTO CORRESPONDING FIELDS OF IT_AFPO
+         FROM AFPO AS A INNER JOIN MARA AS B
+         ON A~MATNR = B~MATNR
+         WHERE A~AUFNR = IT_AFKO-AUFNR
+           AND B~MTART = 'FERT'        "Finish Good
+           AND B~MATKL = P_MATKL       "Material Group
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*           AND dwerk   = p_pwerk       "Phase 2
+           AND DWERK   = P_DWERKS                           "Phase 2
+*  << DEVK966384 Leon
+           AND B~MATNR IN S_MATNR.
+      IF SY-SUBRC = 0.
+        SELECT SINGLE AUFNR AUART PRCTR
+           INTO CORRESPONDING FIELDS OF IT_AUFK
+           FROM AUFK
+* By Richard 2002/1/4 >>>
+*               WHERE ( auart = 'ZP01' OR  auart = 'ZP02' )
+* >>> Richard 2002/02/01 ZP05 Under PC Team's Request
+*               WHERE auart = 'ZP01'
+           WHERE AUART IN S_AUART
+* Richard 2002/02/01 Under PC Team's Request <<<
+* By Richard 2002/1/4 ZP05 <<<
+             AND AUFNR = IT_AFKO-AUFNR.
+        IF SY-SUBRC = 0.
+* Check Production Order Status by Richard 2001/04/22
+          PERFORM CHECK_ORDER_STATUS_COMP_V2 USING IT_AFKO-AUFNR
+                                             CHANGING F_ERROR.
+          IF F_ERROR NE 'X'.
+            SELECT SINGLE MATNR KDMAT
+               INTO CORRESPONDING FIELDS OF IT_KNMT
+               FROM KNMT
+               WHERE VKORG = P_VKORG
+               AND VTWEG = P_VTWEG
+               AND KUNNR = P_KUNNR
+               AND MATNR = IT_AFPO-MATNR.
+            IF SY-SUBRC = 0.
+* SKIP Finished Goods Prod. Order for G SKU
+              IF    P_MATKL = 'N32'
+                AND (   IT_KNMT-KDMAT CS 'G#'
+                     OR IT_KNMT-KDMAT CS 'g#' ).
+                CONTINUE.
+              ENDIF.
+              ITABT-KDMAT = IT_KNMT-KDMAT.
+* By Richard 2001/08/03 under Vensan's requirement starts Here
+              IF     P_MATKL = 'N32'.
+*                        AND ( it_knmt-kdmat = it_knmt-matnr )."BTCO PN
+                SELECT SINGLE WERKS DRM_CUST DRM_DC DRM_NO
+* >>> Richard 2002/01/31 For Missing GBU AV In BTCO Orders
+                              DRM_LN DRM_SEQ
+* Richard 2002/01/31 For Missing GBU AV In BTCO Orders <<<
+                              DRM_BTO_TYPE DRM_CUST_PN
+                              DRM_COMPAL_PART
+                   INTO CORRESPONDING FIELDS OF IT_ZSC00
+                   FROM ZSC00
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*                   WHERE pwerk          = p_pwerk
+                   WHERE PWERK          = P_DWERKS
+*  >> DEVK966384 Leon
+                     AND DRM_CUST       = P_KUNNR
+                     AND DRM_PROD_ORDER = CHK_AUFNR.
+                IF SY-SUBRC = 0.
+                  IF IT_ZSC00-DRM_BTO_TYPE = '6'.
+                    PERFORM GET_GBU_AV CHANGING
+                            ITABT-KDMAT FLG_ERR_AV.
+* >>> Richard 2002/01/31 For Missing GBU AV In BTCO Orders
+                    IF FLG_ERR_AV = 'Y'.
+                      MESSAGE I003 WITH 'BTCO Order#'
+                                         CHK_AUFNR
+                                        'No GBU AV Found-'
+                                        'Skip & Try Later'.
+                      CONTINUE.
+                    ENDIF.
+* >>> Richard 2003/07/02 for China Implementation
+** >>> Richard 2002/04/12 For SW BTCO Localization Code
+*                              PERFORM get_local_av CHANGING
+*                                      itabt-option flg_err_av.
+*                              IF flg_err_av = 'Y'.
+*                                 MESSAGE i003 WITH
+*                                        'BTCO Order#'
+*                                        chk_aufnr
+*                                        'No Localization Found-'
+*                                        'Skip & Check Later'.
+*                                 CONTINUE.
+*                              ENDIF.
+** Richard 2002/04/12 For SW BTCO Localization Code <<<
+* <<< Richard 2003/07/02 for China Implementation
+                  ENDIF.
+                  ITABT-BTYPE = IT_ZSC00-DRM_BTO_TYPE.
+                ELSE.
+* >>> Richard 2002/01/31 For Missing GBU AV In BTCO Orders
+                  MESSAGE I003 WITH 'A32 Order#'
+                                    CHK_AUFNR
+                                    'No DR Match'.
+* Richard 2002/01/31 For Missing GBU AV In BTCO Orders <<<
+* >>> Richard 2002/02/01 Under Captain's Request
+*                           CONTINUE."Phase 2 - Need DR
+* Richard 2002/02/01 Under Captain's Request <<<
+                ENDIF.
+              ENDIF.
+* By Richard 2001/08/03 under Vensan's requirement ends Here
+            ELSE.
+              SELECT SINGLE MATNR KDMAT
+                 INTO CORRESPONDING FIELDS OF IT_KNMT
+                 FROM KNMT
+                 WHERE VKORG = P_VKORG
+                   AND VTWEG = P_VTWEG
+                   AND MATNR = IT_AFPO-MATNR.
+              IF SY-SUBRC = 0.
+                IF    P_MATKL = 'N32'
+                  AND (   IT_KNMT-KDMAT CS 'G#'
+                       OR IT_KNMT-KDMAT CS 'g#' ).
+                  CONTINUE.
+                ENDIF.
+                ITABT-KDMAT = IT_KNMT-KDMAT.
+              ENDIF.
+            ENDIF.
+            SELECT SINGLE MAKTX
+               INTO CORRESPONDING FIELDS OF ITABT
+               FROM MAKT
+               WHERE MATNR = IT_AFPO-MATNR
+                 AND SPRAS = 'EN'.
+            PSMNG = IT_AFPO-PSMNG.
+            MOVE-CORRESPONDING IT_AFKO TO ITABT.
+            MOVE-CORRESPONDING IT_AFPO TO ITABT.
+            ITABT-AUART = IT_AUFK-AUART.
+            ITABT-PRCTR = IT_AUFK-PRCTR.
+            ITABT-PSMNG = PSMNG.
+            ITABT-MATNRO = IT_AFPO-MATNR.
+            SHIFT ITABT-MATNR LEFT DELETING LEADING '0'.
+            CONCATENATE IT_AFKO-GSTRS+4(2)
+                        '/' IT_AFKO-GSTRS+6(2) '/'
+                        IT_AFKO-GSTRS(4)
+               INTO ITABT-GSTRS.
+            CONCATENATE IT_AFKO-GLTRS+4(2)
+                        '/' IT_AFKO-GLTRS+6(2) '/'
+                        IT_AFKO-GLTRS(4)
+               INTO ITABT-GLTRS.
+*>>DEVK9B06QU A31
+            IF P_MATKL+1(2) = '31'.
+              SELECT SINGLE * INTO W_ZSC20
+                FROM ZSC20
+                WHERE UPC_CUSTOMER = 'A31BTS'
+                  AND UPC_CUST_PN = IT_AFPO-MATNR+0(8).
+
+              IF SY-SUBRC = 0.
+                ITABT-BTYPE = 'BTS'.
+              ELSE.
+                ITABT-BTYPE = 'BTO'.
+              ENDIF.
+            ENDIF.
+*<<DEVK9B06QU A31
+
+
+            APPEND ITABT.
+          ENDIF.
+        ENDIF.
+
+      ENDIF.
+    ENDIF.
+    CLEAR IT_KNMT.
+    CLEAR IT_AFPO.
+    CLEAR IT_AUFK.
+    CLEAR ITABT.
+  ENDLOOP.
+ENDFORM.                               " Normal_SKU
+
+*&---------------------------------------------------------------------
+*
+*&      Form  P_85_SELECTION
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM P_85_SELECTION.
+* Get PP Order Numbers that have already been transfered
+  SELECT AUFNR DDATE DTIME
+     INTO CORRESPONDING FIELDS OF TABLE ITAB_CHK
+     FROM ZSC21
+     WHERE AUFNR NOT LIKE '0%'
+     ORDER BY AUFNR.
+* Get Production Plan Order Header
+  SELECT AUFNR GSTRS GLTRS RSNUM
+     INTO CORRESPONDING FIELDS OF TABLE IT_AFKO "PP Order Header
+     FROM AFKO
+     WHERE FTRMI <> '00000000'
+       AND GLTRS IN S_FDATE
+       AND AUFNR IN S_AUFNR.
+
+  LOOP AT IT_AFKO.
+    CHK_AUFNR = IT_AFKO-AUFNR.
+    SHIFT CHK_AUFNR LEFT DELETING LEADING '0'.
+    READ TABLE ITAB_CHK WITH KEY AUFNR = CHK_AUFNR
+       BINARY SEARCH.
+    IF    ( SY-SUBRC <> 0 AND P_RESEND = '' )
+       OR ( SY-SUBRC = 0 AND P_RESEND = 'X' ).
+      SELECT SINGLE A~AUFNR A~MATNR A~PSMNG A~DWERK A~LGORT
+                    B~MTART B~NORMT
+*                    b~normt "By Richard 2001/05/16 Model Name from FG
+         INTO CORRESPONDING FIELDS OF IT_AFPO
+         FROM AFPO AS A INNER JOIN MARA AS B
+         ON A~MATNR    = B~MATNR
+         WHERE A~AUFNR = IT_AFKO-AUFNR
+           AND B~MTART NE 'FERT'       "Not Finish Good
+*              AND b~matkl = p_matkl "Material Group
+           AND ( A~MATNR LIKE '85%' OR A~MATNR LIKE '000000085%'  )
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*           AND dwerk   = p_pwerk.
+           AND DWERK   = P_DWERKS.
+*  << DEVK966384 Leon
+      IF SY-SUBRC = 0.
+        SELECT SINGLE AUFNR AUART PRCTR
+           INTO CORRESPONDING FIELDS OF IT_AUFK
+           FROM AUFK
+* By Richard 2002/1/4 >>>
+*               WHERE ( auart = 'ZP01' OR  auart = 'ZP02' )
+           WHERE AUART = 'ZP01'
+* By Richard 2002/1/4 <<<
+             AND AUFNR = IT_AFKO-AUFNR.
+        IF SY-SUBRC = 0.
+* Check Production Order Status by Richard 2001/04/22
+          PERFORM CHECK_ORDER_STATUS_COMP_V2 USING IT_AFKO-AUFNR
+                                                CHANGING F_ERROR.
+          IF F_ERROR NE 'X'.
+            SELECT SINGLE DRM_CUST_PN DRM_PROD_ORDER
+                          DRM_COMPAL_PART
+              INTO CORRESPONDING FIELDS OF IT_ZSC00
+              FROM ZSC00
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*              WHERE werks          = p_pwerk
+              WHERE WERKS          = P_DWERKS
+*  << DEVK966384 Leon
+                AND DRM_CUST       = P_KUNNR
+                AND DRM_PROD_ORDER = CHK_AUFNR.
+            IF SY-SUBRC = 0.
+              ITABT-KDMAT = IT_ZSC00-DRM_CUST_PN.
+* Get Model Name Using DR Compal P/N
+              SELECT SINGLE NORMT
+                 FROM MARA
+                 INTO IT_AFPO-NORMT
+                 WHERE MATNR = IT_ZSC00-DRM_COMPAL_PART.
+*>>DEVK9B1WEC Dell PN
+            ELSEIF P_KUNNR CS 'A31'.
+              SELECT SINGLE MATNRA AS MATNR
+                            SDLPART AS KDMAT
+               INTO CORRESPONDING FIELDS OF IT_KNMT
+               FROM ZSC130
+               WHERE MATNRA = IT_AFPO-MATNR.
+              IF SY-SUBRC <> 0.
+                SELECT SINGLE MATNRS AS MATNR
+                              SDLPART AS KDMAT
+                 INTO CORRESPONDING FIELDS OF IT_KNMT
+                 FROM ZSC130
+                 WHERE MATNRS = IT_AFPO-MATNR.
+*>>DEVK9B2750
+                IF SY-SUBRC <> 0.
+                  SELECT SINGLE MATNRR AS MATNR
+                             SDLPART AS KDMAT
+                      INTO CORRESPONDING FIELDS OF IT_KNMT
+                      FROM ZSC130
+                      WHERE MATNRR = IT_AFPO-MATNR.
+                ENDIF.
+*<<DEVK9B2750
+              ENDIF.
+              IF SY-SUBRC = 0.
+                ITABT-KDMAT = IT_KNMT-KDMAT.
+              ENDIF.
+*<<DEVK9B1WEC
+            ENDIF.
+            SELECT SINGLE MATNR MAKTX
+               INTO CORRESPONDING FIELDS OF ITABT
+               FROM MAKT
+               WHERE MATNR = IT_AFPO-MATNR
+                 AND ( SPRAS = 'EN' OR SPRAS = 'E' ).
+            PSMNG = IT_AFPO-PSMNG.
+            MOVE-CORRESPONDING IT_AFKO TO ITABT.
+            MOVE-CORRESPONDING IT_AFPO TO ITABT.
+            ITABT-PSMNG  = PSMNG.
+            ITABT-AUART  = IT_AUFK-AUART.
+            ITABT-MATNRO = IT_AFPO-MATNR.
+            ITABT-PRCTR  = IT_AUFK-PRCTR.
+            SHIFT ITABT-MATNR LEFT DELETING LEADING '0'.
+            CONCATENATE IT_AFKO-GSTRS+4(2)
+                        '/' IT_AFKO-GSTRS+6(2) '/'
+                        IT_AFKO-GSTRS(4)
+               INTO ITABT-GSTRS.
+            CONCATENATE IT_AFKO-GLTRS+4(2)
+                        '/' IT_AFKO-GLTRS+6(2) '/'
+                        IT_AFKO-GLTRS(4)
+               INTO ITABT-GLTRS.
+            APPEND ITABT.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+    CLEAR IT_ZSC12.
+    CLEAR IT_KNMT.
+    CLEAR IT_AFPO.
+    CLEAR IT_AUFK.
+    CLEAR ITABT.
+    CLEAR IT_ZSC00.
+  ENDLOOP.
+ENDFORM.                               " P_85_SELECTION
+
+*&---------------------------------------------------------------------
+*
+*&      Form  OTHER_SELECTION
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM OTHER_SELECTION.
+  RANGES: RA_AUFNR FOR ZSC21-AUFNR.
+  DATA: TMP_AUFNR LIKE AFKO-AUFNR.
+** Get PP Order Numbers that have already been transfered
+*  SELECT aufnr ddate dtime
+*     INTO CORRESPONDING FIELDS OF TABLE itab_chk
+*     FROM zsc21
+*     where aufnr not like '0%'
+*     ORDER BY aufnr.
+* Get Production Plan Order Header
+  SELECT AUFNR GSTRS GLTRS RSNUM
+     INTO CORRESPONDING FIELDS OF TABLE IT_AFKO "PP Order Header
+     FROM AFKO
+     WHERE FTRMI <> '00000000'
+       AND GLTRS IN S_FDATE
+       AND AUFNR IN S_AUFNR.
+*>>2007/10/05 Leon
+  IF NOT IT_AFKO[] IS INITIAL.
+
+    RA_AUFNR-OPTION = 'EQ'.
+    RA_AUFNR-SIGN = 'I'.
+    LOOP AT IT_AFKO.
+      RA_AUFNR-LOW = IT_AFKO-AUFNR.
+      APPEND RA_AUFNR.
+      TMP_AUFNR = IT_AFKO-AUFNR.
+      SHIFT TMP_AUFNR LEFT DELETING LEADING '0'.
+      RA_AUFNR-LOW = TMP_AUFNR.
+      APPEND RA_AUFNR.
+    ENDLOOP.
+
+    SELECT AUFNR DDATE DTIME
+       INTO CORRESPONDING FIELDS OF TABLE ITAB_CHK
+       FROM ZSC21
+       WHERE AUFNR IN RA_AUFNR.
+    IF SY-SUBRC = 0.
+      SORT ITAB_CHK BY AUFNR.
+    ENDIF.
+  ENDIF.
+*<<2007/10/05 Leon.
+  LOOP AT IT_AFKO.
+    CHK_AUFNR = IT_AFKO-AUFNR.
+    SHIFT CHK_AUFNR LEFT DELETING LEADING '0'.
+    READ TABLE ITAB_CHK WITH KEY AUFNR = CHK_AUFNR
+       BINARY SEARCH.
+    IF    ( SY-SUBRC <> 0 AND P_RESEND = '' )
+       OR ( SY-SUBRC = 0 AND P_RESEND = 'X' ).
+      SELECT SINGLE A~AUFNR A~MATNR A~PSMNG A~DWERK A~LGORT
+                    B~NORMT B~MTART
+         INTO CORRESPONDING FIELDS OF IT_AFPO
+         FROM AFPO AS A INNER JOIN MARA AS B
+         ON A~MATNR = B~MATNR
+         WHERE A~AUFNR = IT_AFKO-AUFNR
+           AND ( ( B~MTART NE 'FERT'       "Not Finish Good
+*              AND b~matkl = p_matkl. "Material Group
+           AND  (    A~MATNR LIKE '431%'                     "SMT
+                 OR A~MATNR LIKE '451%'                     "
+                 OR A~MATNR LIKE '461%'"P Board
+                 OR A~MATNR LIKE '435%'            "SMT VGA
+                 OR A~MATNR LIKE '455%'            "SMT VGA
+                 OR A~MATNR LIKE '465%'            "SMT VGA
+                 OR A~MATNR LIKE '510%'"LCD & Batt
+                 OR A~MATNR LIKE 'X66%'
+* REVISED BY 9140239 ON 8/11/2003
+                 OR A~MATNR LIKE '511%'
+                 OR A~MATNR LIKE '512%'                     "DEVK9B0A65
+                 OR A~MATNR LIKE '513%'                     " DEVK9B16OV
+                 OR A~MATNR LIKE '0000000431%'
+                 OR A~MATNR LIKE '0000000451%'
+                 OR A~MATNR LIKE '0000000461%'
+                 OR A~MATNR LIKE '0000000435%'  "SMT VGA
+                 OR A~MATNR LIKE '0000000455%'  "SMT VGA
+                 OR A~MATNR LIKE '0000000465%'  "SMT VGA
+                 OR A~MATNR LIKE '0000000510%'
+                 OR A~MATNR LIKE '0000000511%'
+                 OR A~MATNR LIKE '0000000512%'             " DEVK9B0A65
+                 OR A~MATNR LIKE '0000000513%'             " DEVK9B16OV
+                 OR A~MATNR LIKE '514%'             " DEVK9B1U9W
+                 OR A~MATNR LIKE '0000000514%'      " DEVK9B1U9W
+                 OR A~MATNR LIKE '515%'             " DEVK9B31SN
+                 OR A~MATNR LIKE '0000000515%'      " DEVK9B31SN
+                 OR A~MATNR LIKE '70%'                      "DEVK9B1U44
+                 OR A~MATNR LIKE '000000070%'               "DEVK9B1U44
+                 OR A~MATNR LIKE '69%'                      "DEVK9B1U44
+                 OR A~MATNR LIKE '000000069%' ) )           "DEVK9B1U44
+             OR ( B~MTART = 'FERT' AND
+                 ( A~MATNR LIKE '72%'                       "DEVK9B37SV
+                 OR A~MATNR LIKE '000000072%' ) ) )         "DEVK9B37SV
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*           AND a~dwerk = p_pwerk.      "Phase 2
+           AND A~DWERK = P_DWERKS.                          "Phase 2
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+
+      IF SY-SUBRC = 0.
+        SELECT SINGLE AUFNR AUART PRCTR
+           INTO CORRESPONDING FIELDS OF IT_AUFK
+           FROM AUFK
+* By Richard 2002/1/4 >>>
+*               WHERE ( auart = 'ZP01' OR  auart = 'ZP02' )
+           WHERE ( AUART = 'ZP01' OR
+                   AUART = 'ZP05' )                         "DEVK9B0A65
+* By Richard 2002/1/4 <<<
+             AND   AUFNR = IT_AFKO-AUFNR.
+        IF SY-SUBRC = 0.
+* Check Production Order Status by Richard 2001/04/22
+          PERFORM CHECK_ORDER_STATUS_COMP_V2 USING IT_AFKO-AUFNR
+                                                CHANGING F_ERROR.
+          IF F_ERROR NE 'X'.
+* By Richard 2001/05/08
+* We do not transfer Customer Part Number for those PP
+*               SELECT SINGLE matnr_p kdmat_p
+*                  INTO CORRESPONDING FIELDS OF it_zsc12
+*                  FROM zsc12
+*                  WHERE werks   = p_werks
+*                    AND kunnr   = p_kunnr
+*                    AND matnr_p = it_afpo-matnr.
+*               IF sy-subrc = 0.
+*                  itabt-kdmat = it_zsc12-kdmat_p.
+*               ENDIF.
+            SELECT SINGLE MATNR MAKTX
+               INTO CORRESPONDING FIELDS OF ITABT
+               FROM MAKT
+               WHERE MATNR = IT_AFPO-MATNR
+                 AND ( SPRAS = 'EN' OR SPRAS = 'E' ).
+            PSMNG = IT_AFPO-PSMNG.
+            MOVE-CORRESPONDING IT_AFKO TO ITABT.
+            MOVE-CORRESPONDING IT_AFPO TO ITABT.
+            ITABT-AUART = IT_AUFK-AUART.
+            ITABT-PRCTR = IT_AUFK-PRCTR.
+            ITABT-PSMNG = PSMNG.
+            ITABT-MATNRO = IT_AFPO-MATNR.
+            SHIFT ITABT-MATNR LEFT DELETING LEADING '0'.
+            CONCATENATE IT_AFKO-GSTRS+4(2)
+               '/' IT_AFKO-GSTRS+6(2) '/'
+               IT_AFKO-GSTRS(4)
+               INTO ITABT-GSTRS.
+            CONCATENATE IT_AFKO-GLTRS+4(2)
+               '/' IT_AFKO-GLTRS+6(2) '/'
+               IT_AFKO-GLTRS(4)
+               INTO ITABT-GLTRS.
+            APPEND ITABT.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+    CLEAR IT_ZSC12.
+    CLEAR IT_AFPO.
+    CLEAR IT_AUFK.
+    CLEAR ITABT.
+  ENDLOOP.
+ENDFORM.                               " OTHER_SELECTION
+
+*&---------------------------------------------------------------------
+*
+*&      Form  POPULATE_DATA
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM POPULATE_DATA.
+  DATA: WA_CUST LIKE P_KUNNR.
+  DATA: W_NORMT LIKE MARA-NORMT.                            "DEVK9B2887
+
+  IF P_SKU = 'X' AND P_MATKL = 'N32'.
+    WA_CUST = 'A32'.                   "For New A32
+  ELSE.
+    WA_CUST = P_KUNNR.
+  ENDIF.
+  DO.
+    READ LINE SY-INDEX FIELD VALUE MARKF ITABT-AUFNR.
+    IF SY-SUBRC <> 0.
+      EXIT.
+    ENDIF.
+    CHECK MARKF NE SPACE.
+    MOVE-CORRESPONDING ITABT TO ITAB1.
+    ITAB1-LINE = ITABT-LGORT.
+    AUFNR = ITABT-AUFNR.
+    SELECT SINGLE MATNR BRGEW ZPKTY
+       INTO CORRESPONDING FIELDS OF ZSD01
+       FROM ZSD01
+       WHERE MATNR = ITABT-MATNRO
+         AND ZPKTY = '1'.
+    IF SY-SUBRC = 0.
+      BRGEW = ZSD01-BRGEW.
+      ITAB1-BRGEW = BRGEW.
+    ELSE.                              "By Richard 2001/07/04
+      BRGEW = 51 / 10 .
+      ITAB1-BRGEW = BRGEW.
+    ENDIF.
+
+    " >  DEVK9B0VDR MODIFY A51 P.SPEC 2010/10/14
+    IF P_KUNNR+2(3) EQ 'A51'.
+      IF ITABT-KDMAT IS NOT INITIAL.
+        SELECT SINGLE UPC_CUST_PN UPC_CODE UPC_MODEL
+           INTO CORRESPONDING FIELDS OF ZSC20
+           FROM ZSC20
+           WHERE UPC_CUST_PN = ITABT-KDMAT.
+        IF SY-SUBRC = 0.
+          MOVE-CORRESPONDING ZSC20 TO ITAB1.
+        ENDIF.
+      ENDIF.
+    ELSE.
+      " <  DEVK9B0VDR MODIFY A51 P.SPEC 2010/10/14
+      IF ITABT-KDMAT IS NOT INITIAL.
+        SELECT SINGLE UPC_CUST_PN UPC_CODE UPC_MODEL
+           INTO CORRESPONDING FIELDS OF ZSC20
+           FROM ZSC20
+           WHERE UPC_CUST_PN = ITABT-KDMAT.
+        IF SY-SUBRC = 0.
+          MOVE-CORRESPONDING ZSC20 TO ITAB1.
+        ENDIF.
+      ENDIF.
+    ENDIF.  " DEVK9B0VDR MODIFY A51 P.SPEC 2010/10/14
+
+    SELECT AUFPL
+       INTO AFKO-AUFPL UP TO 1 ROWS
+       FROM AFKO
+       WHERE AUFNR = ITABT-AUFNR.
+      SELECT ARBID
+         INTO AFVC-ARBID UP TO 1 ROWS
+         FROM AFVC
+         WHERE AUFPL = AFKO-AUFPL.
+        SELECT ARBPL
+           INTO CRHD-ARBPL
+           FROM CRHD UP TO 1 ROWS
+           WHERE  OBJID = AFVC-ARBID
+             AND OBJTY = 'A'.
+          ITAB1-ARBPL = CRHD-ARBPL.
+        ENDSELECT.
+      ENDSELECT.
+    ENDSELECT.
+    CONCATENATE SY-DATUM+4(2) '/' SY-DATUM+6(2) '/' SY-DATUM(4)
+       INTO   ITAB1-DDATE .
+    CONCATENATE  SY-UZEIT(2) ':' SY-UZEIT+2(2) ':' SY-UZEIT+4(2)
+       INTO ITAB1-DTIME .
+    SHIFT AUFNR LEFT DELETING LEADING '0'.
+    ITAB1-AUFNR = AUFNR.
+
+
+*    IF p_kunnr+2(3) = 'A31'.
+    IF P_KUNNR CS 'A31'.
+      ITAB1-MODEL+0(5) = ITABT-NORMT.
+      ITAB1-MODEL+6(2) = ITABT-MATNR+9(2).
+*>>DEVK9B2887
+      IF ITABT-NORMT <> ''.
+        W_NORMT = ITABT-NORMT.
+      ELSE.
+        SELECT SINGLE NORMT INTO W_NORMT
+          FROM MARA
+          WHERE MATNR = ITABT-MATNR.
+      ENDIF.
+
+      IF W_NORMT <> ''.
+        SELECT * INTO TABLE IT_ZPP78B
+          FROM ZPP78B
+          WHERE CODE = 'A31_NFRC'
+            AND MODEL = W_NORMT.
+        SORT IT_ZPP78B BY MATNR.
+      ELSE.
+        REFRESH IT_ZPP78B.
+      ENDIF.
+*<<DEVK9B2887
+    ELSE.
+      ITAB1-MODEL = ITABT-NORMT.
+    ENDIF.
+    SHIFT ITAB1-MATNR LEFT DELETING LEADING '0'.
+    ITAB1-S = 'YES'.
+    PERFORM CONVERT_BTO_TYPE.
+*>>DEVK9B02X1
+    IF P_KUNNR+2(3) = 'A33'.
+      CLEAR: ZSC18-SFS_SPEC1, ZSC18-SFS_SPEC2.
+      SELECT SINGLE SFS_SPEC1 SFS_SPEC2
+                 INTO CORRESPONDING FIELDS OF ZSC18
+                 FROM ZSC18
+                 WHERE WERKS = P_DWERKS
+                   AND SFS_CUST = WA_CUST
+                   AND SFS_COMPAL_MODEL = ITABT-MATNR+0(5)
+                   AND SFS_COMPAL_PART = RESB-MATNR.
+      IF SY-SUBRC = 0.
+        ITAB1-UPC_MODEL = ZSC18-SFS_SPEC2.
+        ITAB1-PRODUCT_DESC1 = ZSC18-SFS_SPEC1.
+      ELSE.
+        SELECT SINGLE SFS_SPEC1 SFS_SPEC2
+                   INTO CORRESPONDING FIELDS OF ZSC18
+                   FROM ZSC18
+                   WHERE WERKS = P_DWERKS
+                     AND SFS_CUST = WA_CUST
+                     AND SFS_COMPAL_MODEL = '******************'
+                     AND SFS_COMPAL_PART = RESB-MATNR.
+        IF SY-SUBRC = 0.
+          ITAB1-UPC_MODEL = ZSC18-SFS_SPEC2.
+          ITAB1-PRODUCT_DESC1 = ZSC18-SFS_SPEC1.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+*<<DEVK9B02X1
+    ITAB1-KUNNR = P_KUNNR. " DEVK9B0Q5I add customer code
+    ITAB1-LCD_FLG = 'N'.   "DEVK9B0SMK, put default 'N' first
+*>>DEVK9B1EA8 ABO PAd, not use these 2 fields.
+    IF P_ABOPAD = 'X'.
+      CLEAR: ITAB1-KUNNR, ITAB1-LCD_FLG.
+    ENDIF.
+*<<DEVK9B1EA8
+    PERFORM CONV_SPECIAL_CHAR USING ITAB1-KDMAT             "DEVK9B1WEC
+                              CHANGING ITAB1-KDMAT.         "DEVK9B1WEC
+
+    APPEND ITAB1.
+    IF F_XML = 'X'.
+      MOVE-CORRESPONDING ITAB1 TO ITAB1_XML.
+      ITAB1_XML-NORMT = ITABT-NORMT.
+      APPEND ITAB1_XML.
+    ENDIF.
+*>>DEVK9B1EEP
+    IF P_KUNNR CS 'A32' OR P_KUNNR CS 'F32'.
+      MOVE-CORRESPONDING ITAB1 TO ITAB1_A32.
+*      SELECT SINGLE brand
+*         INTO zsc20-brand
+* DEVK9B1IKL add upc_model
+      SELECT SINGLE BRAND UPC_EAN UPC_MODEL
+         INTO (ZSC20-BRAND, ZSC20-UPC_EAN, ZSC20-UPC_MODEL)
+         FROM ZSC20
+         WHERE UPC_CUST_PN = ITABT-KDMAT.
+      IF SY-SUBRC = 0.
+        ITAB1_A32-PRODUCT_DESC1 = ZSC20-BRAND.
+        ITAB1_A32-EAN_CODE = ZSC20-UPC_EAN.                 "DEVK9B1FZ7
+        ITAB1_A32-UPC_MODEL = ZSC20-UPC_MODEL.              "DEVK9B1IKL
+      ENDIF.
+      PERFORM CONV_SPECIAL_CHAR USING ITAB1_A32-KDMAT       "DEVK9B1WEC
+                                CHANGING ITAB1_A32-KDMAT.   "DEVK9B1WEC
+
+      APPEND ITAB1_A32.
+    ENDIF.
+*<<DEVK9B1EEP
+*    IF p_noc = '' AND p_smt = ''. "DEVK9B0VDR 1.
+    IF P_NOC = ''.                 "DEVK9B0VDR 1.
+      SELECT MATNR BDMNG NOMNG DUMPS XLOEK BAUGR ALPGR AUFNR
+         INTO CORRESPONDING FIELDS OF RESB
+         FROM RESB
+         WHERE RSNUM = ITABT-RSNUM
+           AND AUFNR = ITABT-AUFNR
+*          AND dumps <> 'X'       "M: DEVK9B0ECO
+           AND XLOEK = ' ' .
+        MOVE-CORRESPONDING RESB TO ITAB2.
+*>>DEVK9B0SMK
+        IF NOT IT_ZSC57_LCD[] IS INITIAL.
+          READ TABLE IT_ZSC57_LCD WITH KEY MATNR = RESB-MATNR
+                                   BINARY SEARCH.
+          IF SY-SUBRC = 0.
+            LCD_RESB-AUFNR = RESB-AUFNR.
+            APPEND LCD_RESB.
+          ENDIF.
+        ENDIF.
+*<<DEVK9B0SMK
+*>>DEVK9B2887  A31 non-FRC
+        ITAB2-DELETE_FLAG = ''.
+        IF NOT IT_ZPP78B[] IS INITIAL.
+          READ TABLE IT_ZPP78B WITH KEY MATNR = RESB-MATNR.
+          IF SY-SUBRC = 0.
+            ITAB2-DELETE_FLAG = 'Y'.
+          ELSE.
+            ITAB2-DELETE_FLAG = 'N'.
+          ENDIF.
+        ENDIF.
+*<<DEVK9B2887
+        MATNR = RESB-MATNR.                                 "Modify 1/5
+        SHIFT MATNR LEFT DELETING LEADING '0'.              "Modify 1/5
+        IF RESB-BAUGR = ITABT-MATNR.
+          ITAB2-BAUGR = 'AAAAAAAAAAA'.
+        ELSE.
+          BAUGR = RESB-BAUGR.
+          SHIFT BAUGR LEFT DELETING LEADING '0'.
+          ITAB2-BAUGR = BAUGR.
+        ENDIF.
+        IF RESB-ALPGR IS INITIAL.
+          ITAB2-ALPGR = '99'.
+          BDMNG = CEIL( RESB-BDMNG / ITAB1-PSMNG ).
+          ITAB2-BDMNG = BDMNG.
+        ELSE.
+          BDMNG = CEIL( RESB-NOMNG / ITAB1-PSMNG ).
+          ITAB2-BDMNG = BDMNG.
+        ENDIF.
+        SELECT SINGLE MATNR MATKL
+           INTO CORRESPONDING FIELDS OF MARA
+           FROM MARA
+           WHERE MATNR = RESB-MATNR.
+        ITAB2-MATKL = MARA-MATKL.
+* We will transfer ZSC18 Data to SFIS for SA Production Plan
+* 2004/06/23 Leon
+*        IF p_sku = 'X' OR p_85 = 'X'.
+        IF ITABT-MATNR(2) = '85'.
+          SELECT SINGLE SFS_COMPAL_PART SFS_M_TYPE SFS_COMPAL_MODEL
+                        SFS_CUST_PN SFS_SFIS_CTL
+                        SFS_FEATURE SFS_DESC SFS_SPEC1 SFS_SPEC2 WPTR
+                        SFS_CUST       "Richard 2001/08/23
+                        SFS_VD_PN      "Richard 2001/09/04
+                        SFS_SPEC3                           "DEVK9B07ZC
+             INTO CORRESPONDING FIELDS OF ZSC18
+             FROM ZSC18
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*               WHERE werks = p_pwerk
+             WHERE WERKS = P_DWERKS
+*  << DEVK966384 Leon
+               AND SFS_CUST = WA_CUST
+               AND SFS_COMPAL_MODEL <> '******************'
+               AND SFS_COMPAL_PART = MATNR.
+          IF SY-SUBRC = 0.
+            MOVE-CORRESPONDING ZSC18 TO ITAB2.
+* By Richard 2001/07/04 Starts Here
+            UPDATE ZSC18 SET LAST_REF_DT = SY-DATUM
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*                 WHERE werks = p_pwerk
+               WHERE WERKS = P_DWERKS
+*  << DEVK966384 Leon
+                 AND SFS_CUST = P_KUNNR
+                 AND SFS_COMPAL_MODEL <> '******************'
+                 AND SFS_COMPAL_PART = MATNR.
+* By Richard 2001/07/04 Ends Here
+          ENDIF.
+        ENDIF.
+* >> 2005/10/31 Leon, A31 Check 5 digits model
+        IF SY-SUBRC NE 0 OR ITABT-MATNR(2) NE '85'.
+*          if p_kunnr+2(3) = 'A31'.
+*          if p_kunnr+2(3) = 'A31' or p_kunnr+2(3) = 'A58'."M:DEVK9A0JH2
+          IF P_KUNNR+2(3) = 'A31' OR     "A:DEVK9A0JH2
+             P_KUNNR      = 'A31' OR                        "DEVK9B06QU
+             P_KUNNR+2(3) = 'A58' OR     "A:DEVK9A0JH2
+             P_KUNNR      = 'A58' OR                        "DEVK9B157W
+             P_KUNNR+2(3) = 'A33' OR                        "DEVK9B02X1
+             P_KUNNR+2(3) = 'A51' .      "A:DEVK9A0JH2
+            SELECT SINGLE SFS_COMPAL_PART SFS_M_TYPE SFS_COMPAL_MODEL
+                          SFS_CUST_PN SFS_SFIS_CTL
+                          SFS_FEATURE SFS_DESC SFS_SPEC1 SFS_SPEC2 WPTR
+                          SFS_CUST     "Richard 2001/08/23
+                          SFS_VD_PN    "Richard 2001/09/04
+                          SFS_SPEC3                         "DEVK9B07ZC
+               INTO CORRESPONDING FIELDS OF ZSC18
+               FROM ZSC18
+               WHERE WERKS = P_DWERKS
+                 AND SFS_CUST = WA_CUST
+                 AND SFS_COMPAL_MODEL = ITABT-MATNR+0(5)
+                 AND SFS_COMPAL_PART = RESB-MATNR.
+            IF SY-SUBRC = 0.
+              MOVE-CORRESPONDING ZSC18 TO ITAB2.
+              UPDATE ZSC18 SET LAST_REF_DT = SY-DATUM
+                 WHERE WERKS = P_DWERKS
+                   AND SFS_CUST = WA_CUST
+                   AND SFS_COMPAL_MODEL = ITABT-MATNR+0(5)
+                   AND SFS_COMPAL_PART = RESB-MATNR.
+            ENDIF.
+          ENDIF.
+*M:DEVK9A0JH2 >>
+*         if sy-subrc Ne 0 or ( p_kunnr+2(3) NE 'A31' and
+*                               p_kunnr+2(3) NE 'A58' ).
+*M:DEVK9A0JH2 <<
+          IF ( SY-SUBRC NE 0 ) OR           "A:DEVK9A0JH2/DEVK9A0JH6
+             ( P_KUNNR+2(3) NE 'A31' AND    "A:DEVK9A0JH2/DEVK9A0JH6
+               P_KUNNR      NE 'A31' AND                    "DEVK9B06QU
+               P_KUNNR+2(3) NE 'A58' AND    "A:DEVK9A0JH2/DEVK9A0JH6
+               P_KUNNR      NE 'A58' AND    "A:DEVK9A0JH2/DEVK9A0JH6
+               P_KUNNR+2(3) NE 'A33' AND    "A:DEVK9A0JH2/DEVK9A0JH6
+               P_KUNNR+2(3) NE 'A51' ) .    "A:DEVK9A0JH2/DEVK9A0JH6
+            SELECT SINGLE SFS_COMPAL_PART SFS_M_TYPE SFS_COMPAL_MODEL
+                          SFS_CUST_PN SFS_SFIS_CTL
+                        SFS_FEATURE SFS_DESC SFS_SPEC1 SFS_SPEC2 WPTR
+                          SFS_CUST     "Richard 2001/08/23
+                          SFS_VD_PN    "Richard 2001/09/04
+                          SFS_SPEC3                         "DEVK9B07ZC
+               INTO CORRESPONDING FIELDS OF ZSC18
+               FROM ZSC18
+               WHERE WERKS = P_DWERKS
+                 AND SFS_CUST = WA_CUST
+                 AND SFS_COMPAL_MODEL = '******************'
+                 AND SFS_COMPAL_PART = RESB-MATNR.
+            IF SY-SUBRC = 0.
+              MOVE-CORRESPONDING ZSC18 TO ITAB2.
+* By Richard 2001/07/04 Starts Here
+              UPDATE ZSC18 SET LAST_REF_DT = SY-DATUM
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*                 WHERE werks = p_pwerk
+                 WHERE WERKS = P_DWERKS
+*  << DEVK966384 Leon,
+                   AND SFS_CUST = WA_CUST
+                   AND SFS_COMPAL_MODEL = '******************'
+                   AND SFS_COMPAL_PART = RESB-MATNR.
+* By Richard 2001/07/04 Ends Here
+            ENDIF.
+          ENDIF.
+        ENDIF.
+*    PERFORM assign_cust_pn."By Richard 2001/06/12 For Traceability
+*  >> DEVK966384 Leon 2004/06/23, wptr get from zsc18 too.
+*        IF p_other = 'X'.
+*          itab2-wptr = 'N'.
+*        ENDIF.
+*  << DEVK966384
+        SELECT SINGLE MATNR SPRAS MAKTX
+           INTO CORRESPONDING FIELDS OF ITAB2
+           FROM MAKT
+           WHERE MATNR = RESB-MATNR
+             AND SPRAS = 'EN'.
+        ITAB2-AUFNR = AUFNR.
+        ITAB2-AUART = ITABT-AUART.
+        CONCATENATE SY-DATUM+4(2) '/' SY-DATUM+6(2) '/' SY-DATUM(4)
+           INTO   ITAB2-DDATE .
+        CONCATENATE  SY-UZEIT(2) ':' SY-UZEIT+2(2) ':' SY-UZEIT+4(2)
+           INTO ITAB2-DTIME .
+        ITAB2-MATNR = MATNR.
+
+
+        APPEND ITAB2.
+        CLEAR ITAB2.
+        CLEAR :  CRHD, ZSC00, RESB, ZSC18, ZSD01, ZSC13 , KNMT ,ZSC21 ,
+                  MARA, ZSC20 , ZSC12.
+      ENDSELECT.
+    ENDIF.                             "P_NOC = ''
+*>>DEVK9B1FZ7
+    IT_ZSC21-AUFNR = AUFNR.
+    IT_ZSC21-DDATE = SY-DATUM.
+    IT_ZSC21-DTIME = SY-UZEIT.
+    IT_ZSC21-ERNAM = SY-UNAME.
+    APPEND IT_ZSC21.
+*<<DEVK9B1FZ7
+
+    CLEAR :  CRHD, ZSC00, RESB, ZSC18, ZSD01, ZSC13 , KNMT ,ZSC21 ,
+             MARA, ZSC20, ZSC12, ITAB1.
+  ENDDO.
+*>>DEVK9B0SMK
+  LOOP AT LCD_RESB.
+    AUFNR = LCD_RESB-AUFNR.
+    SHIFT AUFNR LEFT DELETING LEADING '0'.
+    ITAB1-LCD_FLG = 'Y'.
+    MODIFY ITAB1 TRANSPORTING LCD_FLG WHERE AUFNR = AUFNR.
+  ENDLOOP.
+*<<DEVK9B0SMK
+ENDFORM.                               " POPULATE_DATA
+
+*&---------------------------------------------------------------------
+*
+*&      Form  DEFINE_FILENAME
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM DEFINE_FILENAME.
+  DATA: WA_TMP_WERKS LIKE P_PWERK,
+        WA_CN(15)     TYPE C.           "For not impacting TW01 dir
+  DATA: WA_TYPE(1)   TYPE C,
+        WA_KUNNR     LIKE P_KUNNR.
+*        wa_sysid(6)  TYPE c.
+  WA_TMP_WERKS = P_PWERK.
+  WA_KUNNR = P_KUNNR.
+  TRANSLATE WA_TMP_WERKS TO LOWER CASE.
+* For Not Deplicated filename
+*  IF p_sku = 'X' AND p_matkl = 'N32'.
+  IF P_SKU = 'X' AND P_MATKL CS '32'.
+*    wa_cn = 'a32old/'.  "DEVK9B1IKL:M
+    IF SY-MANDT = '888'.
+      WA_CN = 'tnb/'.      "DEVK9B1IKL:A
+    ELSE.
+      WA_CN = 'nonbto/'.      "DEVK9B1IKL:A
+    ENDIF.
+
+    WA_TYPE = 'A'.
+*>>DEVK9B0AAL
+  ELSEIF P_SKU = 'X' AND P_KUNNR CS 'MID'.
+    WA_CN = 'mid/'.
+    WA_TYPE = 'A'.
+*<<DEVK9B0AAL
+*>>DEVK9B0FZH
+*  elseif p_sku = 'X' and p_kunnr = 'A77'.
+  ELSEIF ( P_SKU = 'X' OR P_7172 = 'X' ) AND
+           P_KUNNR = 'A77'.
+    WA_CN = 'a77/'.
+    IF P_SKU = 'X'.
+      WA_TYPE = 'A'.
+    ELSEIF P_7172 = 'X'.
+      WA_TYPE = 'B'.
+    ENDIF.
+*<<DEVK9B0FZH
+*  ELSEIF p_sku = 'X' AND p_matkl NE 'N32'.  "DEVK9B1FZ7
+  ELSEIF P_SKU = 'X' AND NOT P_MATKL CS '32'.               "DEVK9B1FZ7
+    WA_CN = 'nonbto/'.
+    WA_TYPE = 'A'.
+*>>DEVK9B0EPO
+  ELSEIF P_KUNNR = 'A31EDOCK'.
+    WA_CN = 'edocking/'.
+    WA_TYPE = 'A'.
+*<<DEVK9B0EPO
+  ELSEIF P_85 = 'X'.
+    WA_CN = 'nonbto/'.
+    WA_TYPE = 'B'.
+    CLEAR WA_KUNNR.
+*>>2006/10/26 Leon,Add 71 72 level item
+  ELSEIF P_7172 = 'X'.
+*    if sy-mandt = '168'.
+    IF SY-MANDT = '888'.
+      WA_CN = 'tnb/'.
+    ELSE.
+      WA_CN = 'nonbto/'.
+*      IF p_pwerk = 'TW03'.
+*        IF p_kunnr CS 'A32'.
+*          wa_cn = 'nonbto/'.
+*        ELSE.
+*          wa_cn = 'tnb/'.
+*        ENDIF.
+*      ELSE.
+*        wa_cn = 'nonbto/'.
+*      ENDIF.
+    ENDIF.
+*    wa_cn = 'tnb/'.
+    WA_TYPE = 'B'.
+    CLEAR WA_KUNNR.
+*<<2006/10/26 Leon,Add 71 72 level item
+  ELSEIF P_OTHER = 'X'.
+*>>DEVK9B1EA8
+*    wa_cn = 'nonbto/'.
+    IF  P_KUNNR CS 'A32' OR P_KUNNR CS 'F32'.
+      WA_CN = 'tnb/'.
+    ELSE.
+      WA_CN = 'nonbto/'.
+    ENDIF.
+*<<DEVK9B1EA8
+    WA_TYPE = 'C'.
+    CLEAR WA_KUNNR.
+  ELSEIF P_SMT = 'X'.
+    WA_CN = 'smt/'.
+    WA_TYPE = 'C'.
+    CLEAR WA_KUNNR.
+*>>DEVK9B1EA8 add ABO PAD 54 level
+  ELSEIF P_ABOPAD = 'X'.
+    WA_CN = 'pad/'.
+    WA_TYPE = 'C'.
+    CLEAR WA_KUNNR.
+*<<DEVK9B1EA8
+  ENDIF.
+*  IF sy-sysid = 'PRD' AND sy-mandt = 168.
+*    wa_sysid = 'if168/'.
+*  ELSE.
+*    wa_sysid = 'if020/'.
+*  ENDIF.
+*>>DEVK9B06QU , adjust A31, BTS and non-BTO folder.
+*  IF p_kunnr = 'A31'.
+*  IF p_kunnr cs 'A31'.  "DEVK9B2014, all A31 put in nonbto folder
+  IF P_KUNNR CS 'A31' AND P_KUNNR <> 'A31EDOCK' AND P_SMT = ''.
+    F_XML = ''.                                             "DEVK9B1FZ7
+*    CONCATENATE '/ftproot/if' sy-mandt '/sfis/a31/'  wa_tmp_werks "DEVK9B0HP2 M
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/nonbto/'  WA_TMP_WERKS "DEVK9B0JMP
+                '/sfisb/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.B' INTO DSN1.
+*    CONCATENATE '/ftproot/if' sy-mandt '/sfis/a31/'  wa_tmp_werks "DEVK9B0HP2 M
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/nonbto/'  WA_TMP_WERKS "DEVK9B0JMP
+                '/sfisc/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.C' INTO DSN2.
+*>>DEVK9B2014 Marked
+*  ELSEIF p_kunnr+2(3) = 'A31'.
+*    f_xml = ''.  "DEVK9B1FZ7
+*    CONCATENATE '/ftproot/if' sy-mandt '/sfis/nonbto/'  wa_tmp_werks
+*                '/sfisb/'
+*                sy-datum+4(2) sy-datum+6(2) sy-uzeit(2)
+*                sy-uzeit+2(2) wa_type '.B' INTO dsn1.
+*    CONCATENATE '/ftproot/if' sy-mandt '/sfis/nonbto/'  wa_tmp_werks
+*                '/sfisc/'
+*                sy-datum+4(2) sy-datum+6(2) sy-uzeit(2)
+*                sy-uzeit+2(2) wa_type '.C' INTO dsn2.
+**<<DEVK9B06QU , adjust A31, BTS and non-BTO folder.
+** > DEVK9B13R9
+*  ELSEIF p_kunnr = 'A31PARTS'.
+*    f_xml = ''.  "DEVK9B1FZ7
+*    CONCATENATE '/ftproot/if' sy-mandt '/sfis/nonbto/'  wa_tmp_werks
+*                '/sfisb/'
+*                sy-datum+4(2) sy-datum+6(2) sy-uzeit(2)
+*                sy-uzeit+2(2) wa_type '.B' INTO dsn1.
+*    CONCATENATE '/ftproot/if' sy-mandt '/sfis/nonbto/'  wa_tmp_werks
+*                '/sfisc/'
+*                sy-datum+4(2) sy-datum+6(2) sy-uzeit(2)
+*                sy-uzeit+2(2) wa_type '.C' INTO dsn2.
+* < DEVK9B13R9
+*<<DEVK9B2014
+*>>2007/01/12 Leon, Add A58
+  ELSEIF P_KUNNR+2(3) = 'A58'
+           OR P_KUNNR = 'A58'.                       " DEVK9B157W
+    F_XML = ''.                                             "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a58/'  WA_TMP_WERKS
+                '/sfisb/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a58/'  WA_TMP_WERKS
+                '/sfisc/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.C' INTO DSN2.
+*<<2007/01/12 Leon, Add A58
+*>>DEVK9B02X1 2008/03/20 Leon, Add A33
+  ELSEIF P_KUNNR+2(3) = 'A33'.
+    F_XML = ''.                                             "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a33/'  WA_TMP_WERKS
+                '/sfisb/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a33/'  WA_TMP_WERKS
+                '/sfisc/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.C' INTO DSN2.
+*<<DEVK9B02X1 2008/03/20 Leon, Add A33
+*>>DEVK9B1EA8 Add ABO PAD
+  ELSEIF P_KUNNR CS 'ABO' AND P_ABOPAD = 'X'.
+    F_XML = ''.                                             "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/abo/'  WA_TMP_WERKS
+                '/pad/sfisb/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/abo/'  WA_TMP_WERKS
+                '/pad/sfisc/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.C' INTO DSN2.
+*<<DEVK9B1EA8
+* > DEVK9B12AB A: DEVK9B12AD
+*  ELSEIF p_kunnr cs 'A32' AND  p_7172 = 'X'.  " A32 TNB   " M:DEVK9B1AQG
+  ELSEIF ( P_KUNNR CS 'A32' OR P_KUNNR CS 'F32' )  AND
+         ( P_7172 = 'X' OR P_OTHER = 'X' OR
+           P_SKU = 'X')." A32 TNB " DEVK9B1AQG
+    F_XML = ''.                                             "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/' WA_CN 'a32/' WA_TMP_WERKS
+                '/sfisb/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/' WA_CN 'a32/' WA_TMP_WERKS
+                '/sfisc/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.C' INTO DSN2.
+  ELSEIF P_KUNNR CS 'A51' AND  P_7172 = 'X'.                " A51 TNB
+    F_XML = ''.                                             "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/' WA_CN 'a51/' WA_TMP_WERKS
+                '/sfisb/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/' WA_CN 'a51/' WA_TMP_WERKS
+                '/sfisc/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.C' INTO DSN2.
+* < DEVK9B12AB A: DEVK9B12AD
+*>>DEVK9B2TIZ  A81, XML format
+  ELSEIF ( P_KUNNR CS 'A81' AND  P_7172 = 'X' ) OR
+    ( P_KUNNR CS 'A81' AND  P_SKU = 'X' ) OR
+    ( P_KUNNR CS 'A81' AND  P_85 = 'X' ) OR
+    ( P_KUNNR CS 'A81' AND  P_ABOPAD = 'X' ) OR
+    ( P_KUNNR CS 'A81' AND  P_OTHER = 'X' ).
+    F_XML = ''.                                             "DEVK9B2TIZ
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a81/' WA_TMP_WERKS
+                '/sfisb/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a81/' WA_TMP_WERKS
+                '/sfisc/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.C' INTO DSN2.
+*<<DEVK9B2TIZ
+*>>DEVK9B1FZ7  A99, XML format
+  ELSEIF P_KUNNR CS 'A95'.
+    F_XML = 'X'.                                            "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/a95/'  WA_TMP_WERKS
+                '/sfisbc/'
+                SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_TYPE '.BC.XML' INTO DSN1.
+*<<DEVK9B1FZ7
+  ELSE.
+    F_XML = ''.                                             "DEVK9B1FZ7
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/' WA_CN WA_TMP_WERKS
+                '/sfisb/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.B' INTO DSN1.
+    CONCATENATE '/ftproot/if' SY-MANDT '/sfis/' WA_CN WA_TMP_WERKS
+                '/sfisc/'
+                P_PWERK SY-DATUM+4(2) SY-DATUM+6(2) SY-UZEIT(2)
+                SY-UZEIT+2(2) WA_KUNNR WA_TYPE '.C' INTO DSN2.
+  ENDIF.
+
+* > DEVK9B1AUC
+  PERFORM CONVERT_FTPROOT  USING    DSN1
+                           CHANGING DSN1.
+
+  PERFORM CONVERT_FTPROOT  USING    DSN2
+                           CHANGING DSN2.
+* < DEVK9B1AUC
+
+
+ENDFORM.                               " DEFINE_FILENAME
+
+*&---------------------------------------------------------------------
+*
+*&      Form  CHECK_ORDER_STATUS_COMP_V2
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*      -->P_AFKO_AUFNR  text
+*      <--P_F_ERROR  text
+*----------------------------------------------------------------------
+*
+FORM CHECK_ORDER_STATUS_COMP_V2 USING F_AUFNR LIKE CAUFV-AUFNR
+                                CHANGING P_ERROR.
+  DATA WA_OBJNR LIKE CAUFV-OBJNR.
+  SELECT SINGLE OBJNR
+     INTO WA_OBJNR
+     FROM CAUFV
+     WHERE AUFNR = F_AUFNR.
+  IF SY-SUBRC = 0.
+    CALL FUNCTION 'CO_COST_CHECK_STATUS_OF_ORDER'
+       EXPORTING
+           OBJNR                 = WA_OBJNR
+           DATE                  = SY-DATUM
+       IMPORTING
+           DELIVERED             = V_DLV
+           RELEASED              = V_REL
+           DELETED               = V_DEL
+           COMPLETED             = V_COM
+           TECH_COMPLETED        = V_TECO
+*         DELIVERED_PAST        =
+*         TECH_COMP_PAST        =
+*         VAR_CALCULATED        =
+*         HEADER_DELIVERED      =
+*         HEADER_DELIVERED_PAST =
+*         PLANNED_COSTS         =
+*    TABLES
+*         T_BUS_TRANS           =
+       EXCEPTIONS
+          ERROR_BUS_TRANS       = 1
+          ORDER_NOT_FOUND       = 2
+          ITEM_NOT_FOUND        = 3
+          OTHERS                = 4.
+    IF SY-SUBRC = 0 AND V_DEL = '' AND V_TECO = ''.
+      P_ERROR = ''.
+    ELSE.
+      P_ERROR = 'X'.
+    ENDIF.
+  ELSE.
+    P_ERROR = 'X'.
+  ENDIF.
+ENDFORM.                               " CHECK_ORDER_STATUS_COMP_V2
+
+
+*&---------------------------------------------------------------------
+*
+*&      Form  OUTPUT_FILE
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM OUTPUT_FILE.
+  OPEN DATASET DSN1 FOR OUTPUT IN TEXT MODE ENCODING DEFAULT.
+  IF SY-SUBRC = 0.
+    IF F_XML = ''.
+      IF P_KUNNR CS 'A32' OR P_KUNNR CS 'F32'.
+        LOOP AT ITAB1_A32.
+          TRANSFER ITAB1_A32 TO DSN1 LENGTH 552 ."DEVK9B1IKL 527 change to 552 DEVK9B0SMK change 501 to 502.
+        ENDLOOP.
+      ELSE.
+        LOOP AT ITAB1.
+          TRANSFER ITAB1 TO DSN1 LENGTH 502 ." DEVK9B0SMK change 501 to 502.
+        ENDLOOP.
+      ENDIF.
+*<<DEVK9B1EEP
+      CLOSE DATASET DSN1.
+      MESSAGE S000 WITH DSN1.
+      IF NOT ITAB2[] IS INITIAL.
+        SORT ITAB2 BY AUFNR BAUGR ALPGR MATNR.
+        OPEN DATASET DSN2 FOR OUTPUT IN TEXT MODE ENCODING DEFAULT.
+        IF SY-SUBRC = 0.
+          LOOP AT ITAB2.
+*          TRANSFER itab2 TO dsn2 length 403.
+*       > DEVK9B1Y7C
+            PERFORM CONV_SPECIAL_CHAR USING ITAB2-MAKTX
+                                    CHANGING ITAB2-MAKTX.
+*       > DEVK9B1Y7C
+*            TRANSFER itab2 TO dsn2 LENGTH 448. "DEVK9B2887:M
+            TRANSFER ITAB2 TO DSN2 LENGTH 449. "DEVK9B2887:A
+          ENDLOOP.
+          CLOSE DATASET DSN2.
+          LOOP AT ITAB1.
+            ZSC21-AUFNR = ITAB1-AUFNR.
+            ZSC21-DDATE = SY-DATUM.
+            ZSC21-DTIME = SY-UZEIT.
+            ZSC21-ERNAM = SY-UNAME.
+            INSERT ZSC21.
+          ENDLOOP.
+          PERFORM FTP_FILE USING COMMANDB.
+          PERFORM FTP_FILE USING COMMANDC.
+
+          SY-LSIND = 0.
+          LEAVE TO SCREEN 0.
+          MESSAGE I000 WITH 'File B/C file created.'.
+        ELSE.
+          OPEN DATASET DSN1 FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+          DELETE DATASET DSN1.
+          MESSAGE I000 WITH 'Error Open C File:'
+                            DSN2
+                            'Delete B File:'
+                            DSN1.
+        ENDIF.
+      ELSE.
+*      IF p_noc = '' AND p_smt = ''.  "DEVK9B0VDR 1. Marked
+        IF P_NOC = ''.                  "DEVK9B0VDR 1. changed
+          OPEN DATASET DSN1 FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+          DELETE DATASET DSN1.
+          MESSAGE I000 WITH 'No C File Available:'
+                            DSN2
+                            'Delete B File:'
+                            DSN1.
+        ELSE.
+          IF P_RESEND = ''.
+            LOOP AT ITAB1.
+              ZSC21-AUFNR = ITAB1-AUFNR.
+              ZSC21-DDATE = SY-DATUM.
+              ZSC21-DTIME = SY-UZEIT.
+              ZSC21-ERNAM = SY-UNAME.
+              INSERT ZSC21.
+            ENDLOOP.
+          ENDIF.
+          SY-LSIND = 0.
+          PERFORM FTP_FILE USING COMMANDB.
+          LEAVE TO SCREEN 0.
+          MESSAGE I000 WITH 'File B file created.'.
+        ENDIF.
+
+      ENDIF.
+    ELSE.
+*>>DEVK9B1FZ7
+      LOOP AT IT_XML.
+        TRANSFER IT_XML TO DSN1.
+      ENDLOOP.
+      CLOSE DATASET DSN1.
+      MESSAGE I000 WITH 'File B/C file created.'.
+      REFRESH IT_ZSC21.
+      LOOP AT ITAB1.
+        IT_ZSC21-AUFNR = ITAB1-AUFNR.
+        IT_ZSC21-DDATE = SY-DATUM.
+        IT_ZSC21-DTIME = SY-UZEIT.
+        IT_ZSC21-ERNAM = SY-UNAME.
+        APPEND IT_ZSC21.
+      ENDLOOP.
+      PERFORM FTP_FILE USING COMMANDB.
+      SY-LSIND = 0.
+      LEAVE TO SCREEN 0.
+      MODIFY ZSC21 FROM IT_ZSC21.
+*<<DEVK9B1FZ7
+    ENDIF.
+  ELSE.
+    MESSAGE I000 WITH 'Error Write to File:' DSN1.
+  ENDIF.
+ENDFORM.                               " OUTPUT_FILE
+
+*&---------------------------------------------------------------------
+*
+*&      Form  WRITE_AND_SELECT
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM WRITE_AND_SELECT.
+  SY-LSIND = 0.
+  SET PF-STATUS 'SFISBC'.
+  PERFORM WRITE_PAGE_HEADER.
+  LOOP AT ITABT.
+    MOVE ITABT-SEL TO MARKF.
+
+    WRITE :/ MARKF AS CHECKBOX UNDER 'SEL',
+             ITABT-AUFNR UNDER 'WO Number',
+             ITABT-MATNR UNDER 'Part Number',
+             ITABT-KDMAT UNDER 'Cust PN',
+             ITABT-MAKTX UNDER 'Material Descr.',
+             ITABT-PSMNG UNDER 'Order QTY',
+             ITABT-GSTRS UNDER 'Start DT',
+             ITABT-GLTRS UNDER 'Due Date',
+             ITABT-AUART UNDER 'Type',
+             ITABT-LGORT UNDER 'S.Loc'.
+    HIDE : ITABT-AUFNR, ITABT-MATNR, ITABT-KDMAT, ITABT-MAKTX,
+           ITABT-PSMNG, ITABT-GSTRS, ITABT-GLTRS, ITABT-AUART,
+           ITABT-LGORT, ITABT-RSNUM, ITABT-NORMT, ITABT-DWERK,
+*           itabt-matnro,itabt-btype, itabt-option,itabt-mtart,
+           ITABT-MATNRO,ITABT-BTYPE, ITABT-MTART,
+           ITABT-PRCTR.
+  ENDLOOP.
+ENDFORM.                               " WRITE_AND_SELECT
+
+*&---------------------------------------------------------------------
+*
+*&      Form  WRITE_PAGE_HEADER
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM WRITE_PAGE_HEADER.
+  WRITE : / 'SEL' COLOR COL_HEADING,
+          (12) 'WO Number'       COLOR COL_HEADING,
+          (12) 'Part Number'     COLOR COL_HEADING,
+          (11) 'Cust PN'         COLOR COL_HEADING,
+          (40) 'Material Descr.' COLOR COL_HEADING,
+          (10) 'Order QTY'       COLOR COL_HEADING,
+          (10) 'Start DT'        COLOR COL_HEADING,
+          (10) 'Due Date'        COLOR COL_HEADING,
+          (4)  'Type'            COLOR COL_HEADING,
+          (5)  'S.Loc'           COLOR COL_HEADING.
+ENDFORM.                               " WRITE_PAGE_HEADER
+
+*&---------------------------------------------------------------------
+*
+*&      Form  CONVERT_BTO_TYPE
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM CONVERT_BTO_TYPE.
+  DATA: W_BTYPE(2) TYPE C.
+
+  IF P_MATKL = 'N32'.
+    W_BTYPE = ITAB1-BTYPE+0(2).
+    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+      EXPORTING
+*      input  = itab1-btype
+        INPUT  = W_BTYPE
+      IMPORTING
+*      output = itab1-btype.
+        OUTPUT = W_BTYPE.
+
+    ITAB1-BTYPE = W_BTYPE.
+  ENDIF.
+ENDFORM.                               " CONVERT_BTO_TYPE
+
+*&---------------------------------------------------------------------
+*
+*&      Form  GET_GBU_AV
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*      <--P_ITABT_KDMAT  text
+*      <--P_LIKE  text
+*      <--P_ITABT_KDMAT  text
+*----------------------------------------------------------------------
+*
+FORM GET_GBU_AV CHANGING P_ITABT_KDMAT LIKE ITABT-KDMAT
+                         P_AV_ERR      TYPE C.
+  CLEAR : P_AV_ERR, P_ITABT_KDMAT.
+  SELECT SINGLE A~DRM_CUST_PN
+     INTO P_ITABT_KDMAT
+     FROM ZSC00A AS A INNER JOIN ZSC33 AS B
+     ON   B~AV_NO = A~DRM_CUST_PN
+     WHERE A~WERKS    = IT_ZSC00-WERKS
+       AND A~DRM_CUST = IT_ZSC00-DRM_CUST
+       AND A~DRM_DC   = IT_ZSC00-DRM_DC
+       AND A~DRM_NO   = IT_ZSC00-DRM_NO
+* >>>Richard 2002/01/31 For Missing GBU AV In BTCO Orders
+       AND A~DRM_LN   = IT_ZSC00-DRM_LN
+       AND A~DRM_SEQ  = IT_ZSC00-DRM_SEQ
+* Richard 2002/01/31 For Missing GBU AV In BTCO Orders <<<
+       AND B~AV_TYPE  = 'GBU'.
+  IF SY-SUBRC NE 0.
+    P_AV_ERR = 'Y'.
+  ENDIF.
+ENDFORM.                               " GET_GBU_AV
+
+*&---------------------------------------------------------------------
+*
+*&      Form  LOCKING_ZSC33
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*      <--P_WA_LOCK_ERR  text
+*----------------------------------------------------------------------
+*
+FORM LOCKING_ZSC33 CHANGING P_WA_LOCK_ERR.
+  DATA : WA_AV_NO LIKE ZSC33-AV_NO,
+         WK_MSGV1 LIKE SY-MSGV1.
+  IF P_SKU = 'X'.
+    CONCATENATE P_PWERK P_KUNNR 'PP' INTO WA_AV_NO.
+  ELSEIF P_85 = 'X'.
+    CONCATENATE P_PWERK '85PP'       INTO WA_AV_NO.
+  ELSEIF P_7172 = 'X'.                                      "DEVK9B0A5E
+    CONCATENATE P_PWERK '7172PP'       INTO WA_AV_NO.       "DEVK9B0A5E
+  ELSEIF P_OTHER = 'X'.
+    CONCATENATE P_PWERK 'OtherPP'    INTO WA_AV_NO.
+  ELSEIF P_SMT = 'X'.
+    CONCATENATE P_PWERK 'SMTPP'    INTO WA_AV_NO.
+  ELSEIF P_ABOPAD = 'X'.                                    "DEVK9B1EA8
+    CONCATENATE P_PWERK 'ABOPP'    INTO WA_AV_NO.           "DEVK9B1EA8
+  ENDIF.
+
+  CALL FUNCTION 'ENQUEUE_EZSC33'
+    EXPORTING
+      MODE_ZSC33     = 'E'
+      MANDT          = SY-MANDT
+      WERKS          = P_PWERK
+      AV_NO          = WA_AV_NO
+    EXCEPTIONS
+      FOREIGN_LOCK   = 1
+      SYSTEM_FAILURE = 2
+      OTHERS         = 3.
+  CASE SY-SUBRC.
+    WHEN 1.
+      P_WA_LOCK_ERR = 'Y'.
+      WK_MSGV1 = SY-MSGV1.
+      MESSAGE I003 WITH 'The program of the same prod. plant'
+                        P_PWERK
+                        'is already running by' WK_MSGV1.
+    WHEN 2.
+      P_WA_LOCK_ERR = 'Y'.
+      MESSAGE I001 WITH 'System error during lock' SY-REPID.
+    WHEN 3.
+      P_WA_LOCK_ERR = 'Y'.
+      MESSAGE I001 WITH 'Error occurs during lock' SY-REPID.
+  ENDCASE.
+* >>> Richard 2002/01/31 Lock with AV Uploading
+  IF P_WA_LOCK_ERR NE 'Y'.
+    CALL FUNCTION 'ENQUEUE_EZSC33'
+      EXPORTING
+        MODE_ZSC33     = 'E'
+        MANDT          = SY-MANDT
+        WERKS          = P_PWERK
+        AV_NO          = 'ZSCI1073SFISBC'
+      EXCEPTIONS
+        FOREIGN_LOCK   = 1
+        SYSTEM_FAILURE = 2
+        OTHERS         = 3.
+    CASE SY-SUBRC.
+      WHEN 1.
+        P_WA_LOCK_ERR = 'Y'.
+        WK_MSGV1 = SY-MSGV1.
+        MESSAGE I003 WITH 'AV Uploading Is Running By'
+                           WK_MSGV1.
+      WHEN 2.
+        P_WA_LOCK_ERR = 'Y'.
+        MESSAGE I001 WITH 'System error during lock' SY-REPID.
+      WHEN 3.
+        P_WA_LOCK_ERR = 'Y'.
+        MESSAGE I001 WITH 'Error occurs during lock' SY-REPID.
+    ENDCASE.
+  ENDIF.
+* Richard 2002/01/31 Lock with AV Uploading <<<
+ENDFORM.                               " LOCKING_ZSC33
+*&---------------------------------------------------------------------
+*
+*&      Form  CHECK_SELECT_DATA
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM CHECK_SELECT_DATA.
+  CLEAR: MARKF, Z_COUNT .
+  DO.
+    READ LINE SY-INDEX FIELD VALUE MARKF.
+    IF SY-SUBRC <> 0.
+      EXIT.
+    ENDIF.
+    CHECK MARKF NE SPACE.
+    Z_COUNT = Z_COUNT + 1.
+  ENDDO.
+ENDFORM.                               " CHECK_SELECT_DATA
+
+*&---------------------------------------------------------------------
+*
+*&      Form  USER_COMMAND
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM USER_COMMAND.
+  CASE SY-UCOMM.
+    WHEN 'EXEC'.
+      PERFORM CHECK_SELECT_DATA.
+      IF Z_COUNT = 0.
+        MESSAGE I000 WITH 'No Data selected'.
+      ELSE.
+        CLEAR ITABT.
+        CLEAR MARKF.
+        PERFORM POPULATE_DATA.         "itab1 & itab2
+        IF NOT ITAB1[] IS INITIAL.
+          IF F_XML = ''.
+            PERFORM OUTPUT_FILE.
+          ELSE.
+            PERFORM PREPARE_SFIS_BC_XML.
+            PERFORM OUTPUT_FILE.
+          ENDIF.
+        ELSE.
+          MESSAGE I003 WITH 'No Production Order was Chosen!'.
+        ENDIF.
+      ENDIF.
+    WHEN 'SELALL'.
+      LOOP AT ITABT.
+        ITABT-SEL = 'X'.
+        MODIFY ITABT INDEX SY-TABIX TRANSPORTING SEL.
+      ENDLOOP.
+      PERFORM WRITE_AND_SELECT.
+    WHEN 'DESEL'.
+      LOOP AT ITABT.
+        ITABT-SEL = ''.
+        MODIFY ITABT INDEX SY-TABIX TRANSPORTING SEL.
+      ENDLOOP.
+      PERFORM WRITE_AND_SELECT.
+    WHEN 'EXIT'.
+      SY-LSIND = 0.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDFORM.                               " USER_COMMAND
+
+*&---------------------------------------------------------------------
+*
+*&      Form  GET_LOCAL_AV
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*      <--P_ITABT_OPTION  text
+*      <--P_FLG_ERR_AV  text
+*----------------------------------------------------------------------
+*
+FORM GET_LOCAL_AV CHANGING P_ITABT_OPTION
+                           P_AV_ERR.
+  DATA: WA_CUST_PN LIKE ZSC00A-DRM_CUST_PN,
+        WA_KDMAT   LIKE ZSC00A-DRM_CUST_PN.
+  CLEAR : P_AV_ERR, P_ITABT_OPTION.
+  SELECT SINGLE A~DRM_CUST_PN
+     INTO WA_CUST_PN
+     FROM ZSC00A AS A INNER JOIN ZSC33 AS B
+     ON   B~AV_NO = A~DRM_CUST_PN
+     WHERE A~WERKS    = IT_ZSC00-WERKS
+       AND A~DRM_CUST = IT_ZSC00-DRM_CUST
+       AND A~DRM_DC   = IT_ZSC00-DRM_DC
+       AND A~DRM_NO   = IT_ZSC00-DRM_NO
+       AND A~DRM_LN   = IT_ZSC00-DRM_LN
+       AND A~DRM_SEQ  = IT_ZSC00-DRM_SEQ
+       AND B~AV_TYPE  = 'LOCAL'.
+  IF SY-SUBRC = 0.
+    SPLIT WA_CUST_PN AT '#' INTO WA_KDMAT P_ITABT_OPTION.
+  ELSE.
+    P_AV_ERR = 'Y'.
+  ENDIF.
+  IF P_ITABT_OPTION = ''.
+    P_AV_ERR = 'Y'.
+  ENDIF.
+ENDFORM.                               " GET_LOCAL_AV
+
+*&---------------------------------------------------------------------
+*
+*&      Form  DEFINE_FTP_COMMANMD
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+*
+FORM DEFINE_FTP_COMMANMD.
+  DATA: WA_A32_SKU(4) TYPE C.
+  IF P_SKU = 'X' AND P_MATKL = 'N32'.
+    WA_A32_SKU = 'PMH'.
+  ELSEIF P_SKU = 'X' AND P_MATKL = 'N31'.
+    WA_A32_SKU = 'A31'.
+*>>2007/01/12 Leon,Add A58
+  ELSEIF P_SKU = 'X' AND ( P_MATKL = 'N58'
+                      OR P_MATKL = 'H58' ). " DEVK9B157W
+    WA_A32_SKU = 'A58'.
+  ELSEIF P_SKU = 'X' AND P_MATKL = 'N33'.
+    WA_A32_SKU = 'A33'.
+*<<2007/01/12 Leon,Add A58
+*>>DEVK9B0AAL
+  ELSEIF P_SKU = 'X' AND P_KUNNR CS 'MID'.
+    WA_A32_SKU = 'MID'.
+*<<DEVK9B0AAL
+  ELSEIF P_SKU = 'X' AND P_KUNNR CS 'A99'.
+    WA_A32_SKU = 'A99'.
+  ELSEIF P_7172 = 'X'.
+    WA_A32_SKU = 'TNB'.
+  ELSEIF P_SMT = 'X'.
+    WA_A32_SKU = 'SMT'.
+  ELSEIF P_ABOPAD = 'X'.                                    "DEVK9B1EA8
+    WA_A32_SKU = 'PAD'.                                     "DEVK9B1EA8
+  ENDIF.
+  IF F_XML = ''.
+    CONCATENATE 'ZSFISB' SY-MANDT P_PWERK WA_A32_SKU INTO COMMANDB.
+    CONCATENATE 'ZSFISC' SY-MANDT P_PWERK WA_A32_SKU INTO COMMANDC.
+  ELSE.
+    CONCATENATE 'ZSFISBC' SY-MANDT P_PWERK WA_A32_SKU INTO COMMANDB.
+  ENDIF.
+ENDFORM.                               " DEFINE_FTP_COMMANMD
+
+*&---------------------------------------------------------------------
+*
+*&      Form  FTP_PROCESS
+*&---------------------------------------------------------------------
+*
+*       text
+*----------------------------------------------------------------------
+*
+*      -->P_COMMANDB  text
+*----------------------------------------------------------------------
+*
+FORM FTP_PROCESS USING    P_COMMANDB.
+
+  CALL FUNCTION 'SXPG_COMMAND_EXECUTE'
+         EXPORTING
+             COMMANDNAME                   = P_COMMANDB
+*           ADDITIONAL_PARAMETERS         = para
+         TABLES
+              EXEC_PROTOCOL               = XBTCXPM
+        EXCEPTIONS
+             NO_PERMISSION                 = 1
+             COMMAND_NOT_FOUND             = 2
+             PARAMETERS_TOO_LONG           = 3
+             SECURITY_RISK                 = 4
+             WRONG_CHECK_CALL_INTERFACE    = 5
+             PROGRAM_START_ERROR           = 6
+             PROGRAM_TERMINATION_ERROR     = 7
+             X_ERROR                       = 8
+             PARAMETER_EXPECTED            = 9
+             TOO_MANY_PARAMETERS           = 10
+             ILLEGAL_COMMAND               = 11
+             WRONG_ASYNCHRONOUS_PARAMETERS = 12
+             CANT_ENQ_TBTCO_ENTRY          = 13
+             JOBCOUNT_GENERATION_ERROR     = 14.
+ENDFORM.                               " FTP_PROCESS
+
+*&---------------------------------------------------------------------*
+*&      Form  P_7172_SELECTION
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM P_7172_SELECTION.
+
+  DATA F_FINDMO(1) TYPE C VALUE SPACE. " DEVK9B1FVU
+
+* Get PP Order Numbers that have already been transfered
+  SELECT AUFNR DDATE DTIME
+     INTO CORRESPONDING FIELDS OF TABLE ITAB_CHK
+     FROM ZSC21
+     WHERE AUFNR NOT LIKE '0%'
+     ORDER BY AUFNR.
+* Get Production Plan Order Header
+  SELECT AUFNR GSTRS GLTRS RSNUM
+     INTO CORRESPONDING FIELDS OF TABLE IT_AFKO "PP Order Header
+     FROM AFKO
+     WHERE FTRMI <> '00000000'
+       AND GLTRS IN S_FDATE
+       AND AUFNR IN S_AUFNR.
+  LOOP AT IT_AFKO.
+    CHK_AUFNR = IT_AFKO-AUFNR.
+    SHIFT CHK_AUFNR LEFT DELETING LEADING '0'.
+    READ TABLE ITAB_CHK WITH KEY AUFNR = CHK_AUFNR
+       BINARY SEARCH.
+    IF    ( SY-SUBRC <> 0 AND P_RESEND = '' )
+       OR ( SY-SUBRC = 0 AND P_RESEND = 'X' ).
+      SELECT SINGLE A~AUFNR A~MATNR A~PSMNG A~DWERK A~LGORT
+                    B~NORMT B~MTART
+         INTO CORRESPONDING FIELDS OF IT_AFPO
+         FROM AFPO AS A INNER JOIN MARA AS B
+         ON A~MATNR = B~MATNR
+         WHERE A~AUFNR = IT_AFKO-AUFNR
+           AND (    A~MATNR LIKE '71%'
+                 OR A~MATNR LIKE '72%'
+                 OR A~MATNR LIKE '87%'  "DEVK9B23HS:A
+                 OR A~MATNR LIKE '000000071%'
+                 OR A~MATNR LIKE '000000072%'
+                 OR A~MATNR LIKE '000000087%'  ) "DEVK9B23HS:A
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*           AND a~dwerk = p_pwerk.      "Phase 2
+           AND A~DWERK = P_DWERKS.                          "Phase 2
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+
+      IF SY-SUBRC = 0.
+
+* > DEVK9B1FVU
+        CLEAR F_FINDMO.
+*        READ TABLE it_afpo WITH KEY it_afpo-aufnr = it_afko-aufnr.
+        IF IT_AFPO-MATNR+0(2) = '72' OR
+          IT_AFPO-MATNR+0(9) = '000000072' .
+
+          SELECT SINGLE AUFNR AUART PRCTR
+             INTO CORRESPONDING FIELDS OF IT_AUFK
+             FROM AUFK
+             WHERE ( AUART = 'ZP01' OR  AUART = 'ZP05' )
+               AND   AUFNR = IT_AFKO-AUFNR.
+          IF SY-SUBRC = 0.
+            F_FINDMO = 'X'.
+          ENDIF.
+        ELSE.
+* < DEVK9B1FVU
+          SELECT SINGLE AUFNR AUART PRCTR
+             INTO CORRESPONDING FIELDS OF IT_AUFK
+             FROM AUFK
+*   By Richard 2002/1/4 >>>
+*                 WHERE ( auart = 'ZP01' OR  auart = 'ZP02' )
+             WHERE AUART = 'ZP01'
+*   By Richard 2002/1/4 <<<
+               AND   AUFNR = IT_AFKO-AUFNR.
+
+          IF SY-SUBRC = 0.
+            F_FINDMO = 'X'.
+          ENDIF.
+
+        ENDIF.   " DEVK9B1FVU
+
+*        IF sy-subrc = 0. M:DEVK9B1FVU
+
+        IF F_FINDMO = 'X'.  " A:DEVK9B1FVU
+* Check Production Order Status by Richard 2001/04/22
+          PERFORM CHECK_ORDER_STATUS_COMP_V2 USING IT_AFKO-AUFNR
+                                                CHANGING F_ERROR.
+
+          IF F_ERROR NE 'X'.
+
+            SELECT SINGLE MATNR KDMAT
+               INTO CORRESPONDING FIELDS OF IT_KNMT
+               FROM KNMT
+               WHERE VKORG = P_VKORG
+               AND VTWEG = P_VTWEG
+               AND KUNNR = P_KUNNR
+               AND MATNR = IT_AFPO-MATNR.
+            IF SY-SUBRC = 0.
+              ITABT-KDMAT = IT_KNMT-KDMAT.
+            ELSE.
+              SELECT SINGLE MATNR KDMAT
+                 INTO CORRESPONDING FIELDS OF IT_KNMT
+                 FROM KNMT
+                 WHERE VKORG = P_VKORG
+                   AND VTWEG = P_VTWEG
+                   AND MATNR = IT_AFPO-MATNR.
+              IF SY-SUBRC = 0.
+                ITABT-KDMAT = IT_KNMT-KDMAT.
+*>>DEVK9B1WEC Dell PN
+              ELSEIF P_KUNNR CS 'A31'.
+                SELECT SINGLE MATNRA AS MATNR
+                              SDLPART AS KDMAT
+                 INTO CORRESPONDING FIELDS OF IT_KNMT
+                 FROM ZSC130
+                 WHERE MATNRA = IT_AFPO-MATNR.
+                IF SY-SUBRC <> 0.
+                  SELECT SINGLE MATNRS AS MATNR
+                                SDLPART AS KDMAT
+                   INTO CORRESPONDING FIELDS OF IT_KNMT
+                   FROM ZSC130
+                   WHERE MATNRS = IT_AFPO-MATNR.
+                ENDIF.
+                IF SY-SUBRC = 0.
+                  ITABT-KDMAT = IT_KNMT-KDMAT.
+* > DEVK9B3AUG
+                ELSE.
+                  SELECT  SINGLE  MATNR CUSTPN AS KDMAT  FROM  ZMM08
+                    INTO CORRESPONDING FIELDS OF IT_KNMT
+                         WHERE  MATNR   = IT_AFPO-MATNR
+                         AND    CCODE   = P_KUNNR+0(3) .
+                  IF SY-SUBRC = 0.
+                    ITABT-KDMAT = IT_KNMT-KDMAT.
+                  ENDIF.
+* < DEVK9B3AUG
+                ENDIF.
+              ENDIF.
+*<<DEVK9B1WEC
+            ENDIF.
+
+
+            SELECT SINGLE MAKTX
+               INTO CORRESPONDING FIELDS OF ITABT
+               FROM MAKT
+               WHERE MATNR = IT_AFPO-MATNR
+                 AND SPRAS = 'EN'.
+            PSMNG = IT_AFPO-PSMNG.
+            MOVE-CORRESPONDING IT_AFKO TO ITABT.
+            MOVE-CORRESPONDING IT_AFPO TO ITABT.
+            ITABT-AUART = IT_AUFK-AUART.
+            ITABT-PRCTR = IT_AUFK-PRCTR.
+            ITABT-PSMNG = PSMNG.
+            ITABT-MATNRO = IT_AFPO-MATNR.
+            SHIFT ITABT-MATNR LEFT DELETING LEADING '0'.
+            CONCATENATE IT_AFKO-GSTRS+4(2)
+                        '/' IT_AFKO-GSTRS+6(2) '/'
+                        IT_AFKO-GSTRS(4)
+               INTO ITABT-GSTRS.
+            CONCATENATE IT_AFKO-GLTRS+4(2)
+                        '/' IT_AFKO-GLTRS+6(2) '/'
+                        IT_AFKO-GLTRS(4)
+               INTO ITABT-GLTRS.
+            APPEND ITABT.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+    CLEAR IT_ZSC12.
+    CLEAR IT_AFPO.
+    CLEAR IT_AUFK.
+    CLEAR ITABT.
+  ENDLOOP.
+
+ENDFORM.                               " P_7172_SELECTION
+
+*&---------------------------------------------------------------------*
+*&      Form  FTP_FILE
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM FTP_FILE USING P_COMMAND.
+
+  TABLES ZPP75A.
+
+* > DEVK9B1ULL
+  DATA W_NAME LIKE SXPGCOSTAB-NAME.
+  DATA W_DOC1 LIKE ZPP75A-DOC1 .
+  SELECT SINGLE NAME INTO W_NAME FROM SXPGCOSTAB WHERE NAME = P_COMMAND.
+  IF SY-SUBRC NE 0 .
+    SELECT SINGLE DOC1 INTO W_DOC1
+      FROM ZPP75A
+      WHERE MSGTYP = 'ZSC23B-RUN'
+        AND DOC1 = P_COMMAND
+        AND CRDATE = SY-DATUM
+        AND CRTIME = SY-UZEIT .
+    IF SY-SUBRC NE 0.
+      ZPP75A-MSGTYP = 'ZSC23B-RUN'.
+      ZPP75A-DOC1 = P_COMMAND.
+      ZPP75A-CRDATE = SY-DATUM.
+      ZPP75A-CRTIME = SY-UZEIT.
+      ZPP75A-DNLINE = SY-UNAME.
+      INSERT ZPP75A.
+    ENDIF.
+    RETURN.
+  ENDIF.
+* < DEVK9B1ULL
+
+  CALL FUNCTION 'SXPG_COMMAND_EXECUTE'
+         EXPORTING
+             COMMANDNAME                   = P_COMMAND
+*             ADDITIONAL_PARAMETERS         = para
+         TABLES
+             EXEC_PROTOCOL                 = XBTCXPM
+         EXCEPTIONS
+             NO_PERMISSION                 = 1
+             COMMAND_NOT_FOUND             = 2
+             PARAMETERS_TOO_LONG           = 3
+             SECURITY_RISK                 = 4
+             WRONG_CHECK_CALL_INTERFACE    = 5
+             PROGRAM_START_ERROR           = 6
+             PROGRAM_TERMINATION_ERROR     = 7
+             X_ERROR                       = 8
+             PARAMETER_EXPECTED            = 9
+             TOO_MANY_PARAMETERS           = 10
+             ILLEGAL_COMMAND               = 11
+             WRONG_ASYNCHRONOUS_PARAMETERS = 12
+             CANT_ENQ_TBTCO_ENTRY          = 13
+             JOBCOUNT_GENERATION_ERROR     = 14.
+
+ENDFORM.                    " FTP_FILE
+*&---------------------------------------------------------------------*
+*&      Form  get_LCD_item
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM GET_LCD_ITEM .
+  SELECT MATNR INTO TABLE IT_ZSC57_LCD
+    FROM ZSC57
+    WHERE WERKS = P_DWERKS
+      AND F2PP = 'D'.
+
+  SORT IT_ZSC57_LCD BY MATNR.
+
+ENDFORM.                    " get_LCD_item
+*&---------------------------------------------------------------------*
+*&      Form  pad_selection
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM PAD_SELECTION .
+* Get PP Order Numbers that have already been transfered
+  SELECT AUFNR DDATE DTIME
+     INTO CORRESPONDING FIELDS OF TABLE ITAB_CHK
+     FROM ZSC21
+     WHERE AUFNR NOT LIKE '0%'
+     ORDER BY AUFNR.
+* Get Production Plan Order Header
+  SELECT AUFNR GSTRS GLTRS RSNUM
+     INTO CORRESPONDING FIELDS OF TABLE IT_AFKO "PP Order Header
+     FROM AFKO
+     WHERE FTRMI <> '00000000'
+       AND GLTRS IN S_FDATE
+       AND AUFNR IN S_AUFNR.
+
+  LOOP AT IT_AFKO.
+    CHK_AUFNR = IT_AFKO-AUFNR.
+    SHIFT CHK_AUFNR LEFT DELETING LEADING '0'.
+    READ TABLE ITAB_CHK WITH KEY AUFNR = CHK_AUFNR
+       BINARY SEARCH.
+    IF    ( SY-SUBRC <> 0 AND P_RESEND = '' )
+       OR ( SY-SUBRC = 0 AND P_RESEND = 'X' ).
+      SELECT SINGLE A~AUFNR A~MATNR A~PSMNG A~DWERK A~LGORT
+                    B~MTART B~NORMT
+         INTO CORRESPONDING FIELDS OF IT_AFPO
+         FROM AFPO AS A
+         INNER JOIN MARA AS B
+            ON A~MATNR    = B~MATNR
+         WHERE A~AUFNR = IT_AFKO-AUFNR
+           AND B~MTART NE 'FERT'       "Not Finish Good
+*              AND b~matkl = p_matkl "Material Group
+           AND ( A~MATNR LIKE '54%' OR A~MATNR LIKE '000000054%'  )
+           AND A~DWERK   = P_DWERKS.
+      IF SY-SUBRC = 0.
+        IF P_KUNNR = 'A31EDOCK'.
+          SELECT SINGLE AUFNR AUART PRCTR
+             INTO CORRESPONDING FIELDS OF IT_AUFK
+             FROM AUFK
+             WHERE AUART IN S_AUART
+               AND AUFNR = IT_AFKO-AUFNR.
+
+        ELSE.
+          SELECT SINGLE AUFNR AUART PRCTR
+             INTO CORRESPONDING FIELDS OF IT_AUFK
+             FROM AUFK
+             WHERE AUART IN S_AUART
+               AND PRCTR = 'PAD'
+               AND AUFNR = IT_AFKO-AUFNR.
+        ENDIF.
+        IF SY-SUBRC = 0.
+* Check Production Order Status by Richard 2001/04/22
+          PERFORM CHECK_ORDER_STATUS_COMP_V2 USING IT_AFKO-AUFNR
+                                                CHANGING F_ERROR.
+          IF F_ERROR NE 'X'.
+            SELECT SINGLE DRM_CUST_PN DRM_PROD_ORDER
+                          DRM_COMPAL_PART
+              INTO CORRESPONDING FIELDS OF IT_ZSC00
+              FROM ZSC00
+*  >> DEVK966384 Leon, splite Data plant and Path plant
+*              WHERE werks          = p_pwerk
+              WHERE WERKS          = P_DWERKS
+*  << DEVK966384 Leon
+                AND DRM_CUST       = P_KUNNR
+                AND DRM_PROD_ORDER = CHK_AUFNR.
+            IF SY-SUBRC = 0.
+              ITABT-KDMAT = IT_ZSC00-DRM_CUST_PN.
+* Get Model Name Using DR Compal P/N
+              SELECT SINGLE NORMT
+                 FROM MARA
+                 INTO IT_AFPO-NORMT
+                 WHERE MATNR = IT_ZSC00-DRM_COMPAL_PART.
+            ENDIF.
+            SELECT SINGLE MATNR MAKTX
+               INTO CORRESPONDING FIELDS OF ITABT
+               FROM MAKT
+               WHERE MATNR = IT_AFPO-MATNR
+                 AND ( SPRAS = 'EN' OR SPRAS = 'E' ).
+            PSMNG = IT_AFPO-PSMNG.
+            MOVE-CORRESPONDING IT_AFKO TO ITABT.
+            MOVE-CORRESPONDING IT_AFPO TO ITABT.
+            ITABT-PSMNG  = PSMNG.
+            ITABT-AUART  = IT_AUFK-AUART.
+            ITABT-MATNRO = IT_AFPO-MATNR.
+            ITABT-PRCTR  = IT_AUFK-PRCTR.
+            SHIFT ITABT-MATNR LEFT DELETING LEADING '0'.
+            CONCATENATE IT_AFKO-GSTRS+4(2)
+                        '/' IT_AFKO-GSTRS+6(2) '/'
+                        IT_AFKO-GSTRS(4)
+               INTO ITABT-GSTRS.
+            CONCATENATE IT_AFKO-GLTRS+4(2)
+                        '/' IT_AFKO-GLTRS+6(2) '/'
+                        IT_AFKO-GLTRS(4)
+               INTO ITABT-GLTRS.
+            APPEND ITABT.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+    CLEAR IT_ZSC12.
+    CLEAR IT_KNMT.
+    CLEAR IT_AFPO.
+    CLEAR IT_AUFK.
+    CLEAR ITABT.
+    CLEAR IT_ZSC00.
+  ENDLOOP.
+
+ENDFORM.                    " pad_selection
+
+
+*&---------------------------------------------------------------------*
+*&      Form  CONVERT_FTPROOT
+*&---------------------------------------------------------------------*
+*       DEVK9B1AUC
+*----------------------------------------------------------------------*
+*      <--P_DNSI  input  path
+*      <--P_DNSO  output path
+*----------------------------------------------------------------------*
+FORM CONVERT_FTPROOT USING P_DNSI
+                     CHANGING P_DNSO.
+
+  DATA W_WINDEV(10) VALUE '\\sapshare'.
+  DATA W_COMPSTR(9) TYPE C. " '/ftproot/'
+
+  P_DNSO = P_DNSI.
+  W_COMPSTR = P_DNSI+0(9).
+  TRANSLATE W_COMPSTR TO LOWER CASE.
+  IF SY-DBSYS = 'MSSQL' .
+    IF W_COMPSTR = '/ftproot/'.
+      CONCATENATE W_WINDEV P_DNSI INTO P_DNSO .
+    ENDIF.
+    REPLACE ALL OCCURRENCES OF '/' IN P_DNSO WITH '\'.
+  ENDIF.
+
+ENDFORM.                    " CONVERT_FTPROOT
+*&---------------------------------------------------------------------*
+*&      Form  prepare_sfis_bc_xml
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM PREPARE_SFIS_BC_XML .
+  DATA: W_ZSC21A LIKE ZSC21A,
+        W_ITMDES LIKE ZSD68-ITMDES,
+        W_AUFNR  LIKE ZSC21A-AUFNR.
+  DATA: Z_TRANSDATE(10)  TYPE C ,
+        Z_TRANSTIME(10)  TYPE C .
+
+*Transfer Date(SFIS-BC)
+  MOVE: SY-DATUM+4(2) TO Z_TRANSDATE+0(2), '/' TO Z_TRANSDATE+2(1),
+        SY-DATUM+6(2) TO Z_TRANSDATE+3(2), '/' TO Z_TRANSDATE+5(1),
+        SY-DATUM+0(4) TO Z_TRANSDATE+6(4).
+*Transfer Time(SFIS-BC)
+  MOVE: SY-UZEIT+0(2) TO Z_TRANSTIME+0(2), ':' TO Z_TRANSTIME+2(1),
+        SY-UZEIT+2(2) TO Z_TRANSTIME+3(2), ':' TO Z_TRANSTIME+5(1),
+        SY-UZEIT+4(2) TO Z_TRANSTIME+6(2).
+
+
+  LOOP AT ITAB1_XML.
+    AT FIRST.
+      PERFORM XML_FILE_HEAD_BC .
+    ENDAT.
+    PERFORM BEGIN_XML_NODE USING 'MO'.     "1
+    PERFORM XML_NODE_N_BODY USING 'MO_NUMBER' ITAB1_XML-AUFNR.  "1.01
+    PERFORM XML_NODE_N_BODY USING 'PART_NUMBER' ITAB1_XML-MATNR."1.02
+    PERFORM XML_NODE_N_BODY USING 'CUSTOMER_PART_NO' ITAB1_XML-KDMAT."1.03
+    PERFORM XML_NODE_N_BODY USING 'MODEL_NAME' ITAB1_XML-NORMT."1.04
+    PERFORM XML_NODE_N_BODY USING 'DESCRIPTION' ITAB1_XML-MAKTX."1.05
+    SHIFT ITAB1_XML-PSMNG LEFT DELETING LEADING SPACE.
+    PERFORM XML_NODE_N_BODY USING 'QTY' ITAB1_XML-PSMNG.        "1.06
+    PERFORM XML_NODE_N_BODY USING 'PLAN_DATE_OF_MO_INPUT'
+                                   ITAB1_XML-GSTRS.             "1.07
+    PERFORM XML_NODE_N_BODY USING 'DUE_DATE_OF_MO_CLOSE'
+                                   ITAB1_XML-GLTRS.             "1.08
+    PERFORM XML_NODE_N_BODY USING 'PLANT_CODE' ITAB1_XML-DWERK. "1.09
+    PERFORM XML_NODE_N_BODY USING 'WORK_CENTER' ITAB1_XML-ARBPL."1.10
+    PERFORM XML_NODE_N_NOBODY USING 'PRODUCTION_LINE_CODE'.  "1.11
+    PERFORM XML_NODE_N_BODY USING 'CUST_CODE' ITAB1_XML-KUNNR.  "1.12
+    PERFORM XML_NODE_N_BODY USING 'MASTER_MO' 'YES'.        "1.13
+    SHIFT ITAB1_XML-BRGEW LEFT DELETING LEADING SPACE.
+    PERFORM XML_NODE_N_BODY USING 'GROSS_WEIGHT' ITAB1_XML-BRGEW."1.14
+    PERFORM XML_NODE_N_BODY USING 'VOLUME' ITAB1_XML-CUBE.      "1.15
+    PERFORM XML_NODE_N_BODY USING 'MO_TYPE' ITAB1_XML-AUART.    "1.16
+*    PERFORM xml_node_n_body USING 'UPC_CODE' itab1_xml-upc.  "1.17
+*    PERFORM xml_node_n_body USING 'EAN_CODE' itab1_xml-upc_ean."1.18
+*    PERFORM xml_node_n_body USING 'PO_NUMBER' itab1_xml-wrk_pono."1.19
+*    PERFORM xml_node_n_body USING 'PO_LINE_NUMBER' itab1_xml-wrk_poln."1.20
+*    PERFORM xml_node_n_body USING 'PO_TYPE' itab1_xml-wrk_btotype."1.21
+*    PERFORM xml_node_n_body USING 'REGION' itab1_xml-ship_dc."1.22
+    PERFORM XML_NODE_N_NOBODY USING 'UPC_CODE' .  "1.17
+    PERFORM XML_NODE_N_NOBODY USING 'EAN_CODE' ."1.18
+    PERFORM XML_NODE_N_NOBODY USING 'PO_NUMBER' ."1.19
+    PERFORM XML_NODE_N_NOBODY USING 'PO_LINE_NUMBER'."1.20
+    PERFORM XML_NODE_N_NOBODY USING 'PO_TYPE'."1.21
+    PERFORM XML_NODE_N_NOBODY USING 'REGION'."1.22
+
+    PERFORM XML_NODE_N_BODY USING 'CUSTOMER_MODEL_NAME'
+                                   ITAB1_XML-UPC_MODEL.         "1.23
+    PERFORM XML_NODE_N_BODY USING 'SFIS_PRODUCT_DESC1'
+                                   ITAB1_XML-PRODUCT_DESC1.     "1.24
+    PERFORM XML_NODE_N_BODY USING 'SFIS_PRODUCT_DESC2'
+                                   ITAB1_XML-PRODUCT_DESC2.     "1.25
+    PERFORM XML_NODE_N_BODY USING 'SFIS_PRODUCT_DESC3'
+                                   ITAB1_XML-PRODUCT_DESC3.     "1.26
+    PERFORM XML_NODE_N_BODY USING 'SFIS_PRODUCT_DESC4'
+                                   ITAB1_XML-PRODUCT_DESC4.     "1.26
+
+*    CLEAR: w_aufnr, w_zsc21a, w_itmdes.
+*    w_aufnr = itab1_xml-aufnr.
+*    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+*      EXPORTING
+*        input  = w_aufnr
+*      IMPORTING
+*        output = w_aufnr.
+*
+*    SELECT SINGLE * INTO w_zsc21a
+*      FROM zsc21a
+*      WHERE aufnr = w_aufnr
+*        AND sn = '001'
+*        AND dlind = ''.
+*    IF sy-subrc = 0.
+*      SELECT SINGLE itmdes INTO w_itmdes
+*        FROM zsd68
+*        WHERE dc     = w_zsc21a-dc
+*          AND dnno   = w_zsc21a-dnno
+*          AND dnline = w_zsc21a-dnline.
+*    ENDIF.
+*
+*    IF sy-subrc = 0.
+*      PERFORM xml_node_n_body USING 'SFIS_PRODUCT_DESC4' w_itmdes+0(40)."1.26
+*    ELSE.
+*      PERFORM xml_node_n_body USING 'SFIS_PRODUCT_DESC4' ''."1.26
+*    ENDIF.
+
+*    PERFORM xml_node_n_body USING 'COUNTRY_CODE' itab1_xml-loc_option."1.28
+    PERFORM XML_NODE_N_NOBODY USING 'COUNTRY_CODE'."1.28
+    PERFORM XML_NODE_N_BODY USING 'PROFIT_CENTER' ITAB1_XML-PRCTR."1.29
+    PERFORM XML_NODE_N_BODY USING 'MATERIAL_TYPE' ITAB1_XML-MTART."1.30
+*    PERFORM xml_node_n_body USING 'MO_TYPE_1' itab1_xml-spord."1.31
+*    PERFORM xml_node_n_body USING 'MO_TYPE_2' itab1_xml-fpord."1.32
+    PERFORM XML_NODE_N_NOBODY USING 'MO_TYPE_1'."1.31
+    PERFORM XML_NODE_N_NOBODY USING 'MO_TYPE_2'."1.32
+    PERFORM XML_NODE_N_BODY USING 'MO_TYPE_3' ''.           "1.32
+    PERFORM XML_NODE_N_BODY USING 'TRANSFER_DATE' Z_TRANSDATE."1.34
+    PERFORM XML_NODE_N_BODY USING 'TRANSFER_TIME' Z_TRANSTIME."1.35
+    PERFORM XML_NODE_N_BODY USING 'MATERIAL_LOCATION' ITAB1_XML-LINE."1.37
+
+* MATERIALS start
+    IF NOT ITAB2[] IS INITIAL.
+      PERFORM BEGIN_XML_NODE USING 'MATERIALS'.             "1.36
+      LOOP AT ITAB2 WHERE AUFNR EQ ITAB1_XML-AUFNR.
+        PERFORM BEGIN_XML_NODE USING 'MATERIAL'.                "2
+
+        PERFORM XML_NODE_N_BODY USING 'KEY_PART_NUMBER'
+                                       ITAB2-MATNR.          "2.1
+
+        PERFORM XML_NODE_N_BODY USING 'ALTERNATIVE_GROUP'
+                                       ITAB2-ALPGR.          "2.2
+        PERFORM XML_NODE_N_BODY USING 'PARENT_PART_NUMBER'
+                                       ITAB2-BAUGR.          "2.3
+
+        SHIFT ITAB2-BDMNG LEFT DELETING LEADING SPACE.
+        PERFORM XML_NODE_N_BODY USING 'QTY' ITAB2-BDMNG.     "2.4
+        PERFORM XML_NODE_N_BODY USING 'DESCRIPTION' ITAB2-MAKTX. "2.5
+        PERFORM XML_NODE_N_BODY USING 'APS_CONTROL_MATERIAL'
+                                      ITAB2-APSCTRL.         "2.6
+        PERFORM END_XML_NODE USING 'MATERIAL'.       "2
+      ENDLOOP.
+      PERFORM END_XML_NODE USING 'MATERIALS'.       "2
+    ENDIF.
+* MATERIALS end
+
+    PERFORM END_XML_NODE USING 'MO'.       "1
+    AT LAST.
+      PERFORM END_XML_NODE USING 'SAPtoSFIS'.
+    ENDAT.
+  ENDLOOP.
+
+ENDFORM.                    " prepare_sfis_bc_xml
+*&---------------------------------------------------------------------*
+*&      Form  xml_file_head_bc
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM XML_FILE_HEAD_BC .
+  REFRESH IT_XML.
+
+  IT_XML-TXT = '<?xml version="1.0" encoding="UTF-8"?>'.
+  APPEND IT_XML.
+
+  PERFORM BEGIN_XML_NODE_W_ATTRIB_NO_END USING
+                                    'SAPtoSFIS' 'NAME="BC"'.
+
+ENDFORM.                    " xml_file_head_bc
+*&---------------------------------------------------------------------*
+*&      Form  CONV_SPECIAL_CHAR
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_ITAB1_A32_KDMAT  text
+*      <--P_ITAB1_A32_KDMAT  text
+*----------------------------------------------------------------------*
+FORM CONV_SPECIAL_CHAR  USING    PA_IN
+                        CHANGING PA_OUT.
+  FIELD-SYMBOLS : <N> TYPE X.
+  DATA: ASC_N TYPE I,
+        STR_LEN TYPE I,
+        TMP_POS TYPE I.
+
+  REPLACE ALL OCCURRENCES OF '"' IN PA_IN WITH SPACE.
+  PA_OUT = PA_IN.
+
+  STR_LEN = STRLEN( PA_IN ).
+  CLEAR TMP_POS.
+  DO STR_LEN TIMES.
+    ASSIGN PA_IN+TMP_POS(1) TO <N> CASTING.
+    MOVE <N> TO ASC_N.
+    IF ASC_N < 20 OR ASC_N > 126.
+      PA_OUT+TMP_POS(1) = ' '.
+    ENDIF.
+    ADD 1 TO TMP_POS.
+  ENDDO.
+
+ENDFORM.                    " CONV_SPECIAL_CHAR

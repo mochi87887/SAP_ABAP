@@ -1,0 +1,276 @@
+Practice Append Modify Read Insert Delete _ABAP(3).ppt
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK05
+*& 參考文件: ABAP(3).ppt
+*&---------------------------------------------------------------------*
+
+REPORT  ZTSKAO_MK05.
+
+
+*&---------------------------------------------------------------------*
+*&  資料前置準備
+*&---------------------------------------------------------------------*
+DATA: BEGIN OF it_test OCCURS 0,
+    text1(3),
+    text2(3),
+    text3(3),
+    END OF it_test.
+
+
+*&---------------------------------------------------------------------*
+*&  APPEND 語法
+*&---------------------------------------------------------------------*
+* 新增一筆資料於Internal Table的最後
+it_test-text1 = 'AA1'.
+it_test-text3 = 'BB1'.
+APPEND it_test.
+
+
+*&---------------------------------------------------------------------*
+*&  MODIFY 語法
+*&---------------------------------------------------------------------*
+it_test-text2 = ''.
+MODIFY it_test INDEX 3
+  TRANSPORTING text2.
+
+it_test-text2 = ''.
+MODIFY it_test
+  TRANSPORTING text2
+  WHERE text1 = 'AA3'.
+
+
+*&---------------------------------------------------------------------*
+*&  READ 語法
+*&---------------------------------------------------------------------*
+* 用於當想要修改或是應用某筆某欄資料時
+READ TABLE it_test INDEX 2.
+
+READ TABLE it_test WITH KEY text1 = 'AA1'
+              text3 = 'BB1'.
+
+
+*&---------------------------------------------------------------------*
+*&  INSERT 語法
+*&---------------------------------------------------------------------*
+it_test-text1 = 'aaa'.
+it_test-text2 = 'bbb'.
+it_test-text3 = 'ccc'.
+INSERT it_test INDEX 3.
+
+
+*&---------------------------------------------------------------------*
+*&  DELETE 語法
+*&---------------------------------------------------------------------*
+* 第一種刪除資料
+DELETE it_test INDEX 3.
+
+* 第二種刪除資料
+* DELETE TABLE it_test WITH TABLE KEY text1 = 'AA1'.
+
+* 第三種刪除資料
+DELETE it_test
+WHERE text1 = 'AA1'
+  AND text3 = 'BB3'.
+
+*&---------------------------------------------------------------------*
+*&  ABAP(3).ppt 練習
+* 請先定義一個有三個欄位的Internal Table,
+* 三個欄位全設定為 長度5 資料型態 char.
+*&---------------------------------------------------------------------*
+DATA: BEGIN OF it_practice OCCURS 0,
+        TEXT1(5) TYPE C,
+        TEXT2(5) TYPE C,
+        TEXT3(5) TYPE C,
+      END OF it_practice.
+
+* 新增第一排資料
+it_practice-TEXT1 = '1111A'.
+it_practice-TEXT2 = '2222A'.
+it_practice-TEXT3 = '3333A'.
+APPEND it_practice.
+
+* 新增第二排資料
+it_practice-TEXT1 = '1111B'.
+it_practice-TEXT2 = '2222B'.
+it_practice-TEXT3 = '3333B'.
+APPEND it_practice.
+
+* 新增第三排資料
+it_practice-TEXT1 = '1111C'.
+it_practice-TEXT2 = '2222C'.
+it_practice-TEXT3 = '3333C'.
+APPEND it_practice.
+
+
+
+*&---------------------------------------------------------------------*
+*&  ABAP(3).ppt 練習一
+* 1. 請先在此internal table 建立3筆資料如下,並列印出來
+* 2. 請從第二筆開始列印(提示: from)
+* 3. 請只列印第三筆(提示:where)
+*&---------------------------------------------------------------------*
+ULINE.
+WRITE: 'ABAP(3).ppt 練習一' COLOR 1.
+SKIP.
+
+* 1. 請先在此internal table 建立3筆資料如下,並列印出來
+WRITE: / 'TEXT1', 'TEXT2', 'TEXT3'.
+LOOP AT it_practice.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+SKIP.
+
+* 2. 請從第二筆開始列印(提示: from)
+WRITE: / 'TEXT1', 'TEXT2', 'TEXT3'.
+LOOP AT it_practice FROM 2.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+SKIP.
+
+* 3. 請只列印第三筆(提示:where)
+WRITE: / 'TEXT1', 'TEXT2', 'TEXT3'.
+LOOP AT it_practice where TEXT1 = '1111C'.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+SKIP.
+
+*&---------------------------------------------------------------------*
+*&  ABAP(3).ppt 練習二
+* 1. 請修改並列印跟練一一樣的樣式出來
+* 2. 請修改其中一個欄位並列印跟練一一樣的樣式出來(提示 modify TRANSPORTING f…. where)
+*&---------------------------------------------------------------------*
+ULINE.
+WRITE: 'ABAP(3).ppt 練習二'  COLOR 3.
+SKIP.
+
+* 1. 請修改並列印跟練一一樣的樣式出來
+WRITE: / 'TEXT1', 'TEXT2', 'TEXT3'.
+LOOP AT it_practice.
+
+* 指定TEXT1的資料
+  it_practice-TEXT1 = '1111X'.
+
+* 修改it_practice資料
+  MODIFY it_practice.
+
+* 列印資料表
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+SKIP.
+
+* 2. 請修改其中一個欄位並列印跟練一一樣的樣式出來(提示 modify TRANSPORTING f…. where)
+WRITE: / 'TEXT1', 'TEXT2', 'TEXT3'.
+
+*---------------------恢復原始資料---------------------
+  it_practice-TEXT1 = '1111A'.
+  MODIFY it_practice
+   TRANSPORTING TEXT1
+   WHERE TEXT1 = '1111X'
+     AND TEXT2 = '2222A'.
+
+  it_practice-TEXT1 = '1111B'.
+  MODIFY it_practice
+   TRANSPORTING TEXT1
+   WHERE TEXT1 = '1111X'
+     AND TEXT2 = '2222B'.
+
+  it_practice-TEXT1 = '1111C'.
+  MODIFY it_practice
+   TRANSPORTING TEXT1
+   WHERE TEXT1 = '1111X'
+     AND TEXT2 = '2222C'.
+*------------------------------------------------------
+
+
+  it_practice-TEXT2 = '22XYZ'.
+  MODIFY it_practice
+    TRANSPORTING TEXT2
+    WHERE TEXT2 = '2222B'.
+
+LOOP AT it_practice.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+
+
+*&---------------------------------------------------------------------*
+*&  ABAP(3).ppt 練習三
+* 不使用loop 印出 第二筆中間那個值 22XYZ(提示: READ)
+*&---------------------------------------------------------------------*
+ULINE.
+WRITE: 'ABAP(3).ppt 練習三' COLOR 2.
+SKIP.
+
+READ TABLE it_practice WITH TABLE KEY TEXT1 = '1111C'
+                                      TEXT2 = '22XYZ'
+                                      TEXT3 = '3333C'.
+
+
+*&---------------------------------------------------------------------*
+*&  ABAP(3).ppt 練習四
+* 請在第二筆資料後面插入一筆資料並列印
+*&---------------------------------------------------------------------*
+ULINE.
+WRITE: 'ABAP(3).ppt 練習四' COLOR 4.
+SKIP.
+
+* 列印標題
+WRITE: '插入前:',
+       / 'TEXT1', 'TEXT2', 'TEXT3'.
+
+* 列印 Internan Table資料
+LOOP AT it_practice.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+SKIP.
+
+* 新增要插入的資料
+it_practice-TEXT1 = '111AA'.
+it_practice-TEXT2 = '222BB'.
+it_practice-TEXT3 = '333CC'.
+INSERT it_practice INDEX 3.
+
+* 列印標題
+WRITE: '插入後:',
+       / 'TEXT1', 'TEXT2', 'TEXT3'.
+
+* 列印 Internan Table資料
+LOOP AT it_practice.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.
+
+
+*&---------------------------------------------------------------------*
+*&  ABAP(3).ppt 練習五
+* 刪除最後一筆資料並列印跟練一一樣的樣式出來(DELETE)
+*&---------------------------------------------------------------------*
+ULINE.
+WRITE: 'ABAP(3).ppt 練習五' COLOR 5.
+SKIP.
+
+DELETE it_practice
+WHERE TEXT1 = '1111C' AND
+      TEXT2 = '2222C' AND
+      TEXT3 = '3333C'.
+
+* 列印 Internan Table資料
+LOOP AT it_practice.
+  WRITE: / it_practice-TEXT1,
+           it_practice-TEXT2,
+           it_practice-TEXT3.
+ENDLOOP.

@@ -1,0 +1,133 @@
+Practice erp_i.ppt HW(I)
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK07
+*&
+*&---------------------------------------------------------------------*
+*&  ABAP(4).ppt 的作業一
+*&  ABAP(4).ppt 的練習一
+*&---------------------------------------------------------------------*
+
+REPORT  ztskao_mk07 NO STANDARD PAGE HEADING
+                             LINE-SIZE 310
+                             LINE-COUNT 65(2)
+                             MESSAGE-ID zpp.
+
+* 使用的資料表
+TABLES: mard, mara.
+
+* ==========Internal Table(包含MARD, MARA)==========
+DATA: BEGIN OF it_kao OCCURS 0,
+        werks LIKE mard-werks,    "plant
+        matnr LIKE mard-matnr,    "material
+        lgort LIKE mard-lgort,    "location
+        mtart LIKE mara-mtart,    "material type
+      END OF it_kao.
+
+
+* 執行計算三次方的變數
+DATA: inputy TYPE i.
+
+
+* ----------區塊1----------
+SELECTION-SCREEN BEGIN OF BLOCK box1 WITH FRAME.
+
+PARAMETERS p_plant LIKE mard-werks.     "p_plant
+PARAMETERS p_loc LIKE mard-lgort.       "p_location
+SELECT-OPTIONS s_matnr FOR mard-matnr.  "material type
+
+SELECTION-SCREEN END OF BLOCK box1.
+
+
+* ----------區塊2----------
+SELECTION-SCREEN BEGIN OF BLOCK box2 WITH FRAME.
+
+PARAMETERS inputx TYPE i.
+
+SELECTION-SCREEN END OF BLOCK box2.
+
+
+
+*-------------   S T A R T  O F  S E L E C T I O N ---------------
+START-OF-SELECTION.
+
+* 印出標題
+  WRITE: /1(20) 'Plant' COLOR 3,
+          24(8) 'Material No' COLOR 3,
+          38(12)'Location' COLOR 3,
+          54(8) 'Material Type' COLOR 3.
+  ULINE.
+
+  PERFORM getdata.
+
+  inputy = inputx.
+
+  PERFORM caculate USING inputy.
+
+*&---------------------------------------------------------------------*
+*&      Form  ENDFORM
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM getdata.
+
+  SELECT *
+  FROM mard AS d
+  INNER JOIN mara AS a ON d~mandt = a~mandt AND d~matnr = a~matnr
+  INTO CORRESPONDING FIELDS OF TABLE it_kao
+  WHERE d~werks = p_plant AND
+        d~matnr = p_loc AND
+        a~mtart IN s_matnr.
+
+  "-----無資料-----
+  IF sy-subrc <> 0.
+    MESSAGE s000 WITH 'No Data Found'.
+    WRITE 'No Data Found'.
+    "LEAVE LIST-PROCESSING.
+    SKIP 3.
+
+  ELSE.
+    PERFORM writedata.
+
+  ENDIF.
+
+ENDFORM.                    "GetData
+
+
+*&---------------------------------------------------------------------*
+*&      Form  writeData
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM writedata.
+
+  LOOP AT it_kao.
+
+    "印出資料
+    WRITE: / it_kao-werks UNDER 'Plant',
+             it_kao-matnr UNDER 'Material No',
+             it_kao-lgort UNDER 'Location',
+             it_kao-mtart UNDER 'Material Type'.
+  ENDLOOP.
+
+ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  caculate
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->INPUTX     text
+*----------------------------------------------------------------------*
+FORM caculate USING inputx TYPE i.
+  DATA: output TYPE i,
+        inputlast TYPE i.
+
+  output = inputx * inputx * inputx.
+  inputlast = output.
+
+  WRITE inputlast.
+
+ENDFORM.                    "caculate

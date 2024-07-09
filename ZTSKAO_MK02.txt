@@ -1,0 +1,58 @@
+Practice TYPES  <user defined type>
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK02
+*& 參考文件: ABAP(2).ppt
+*&---------------------------------------------------------------------*
+*&  自訂型態 & 自訂結構型態 練習
+*&---------------------------------------------------------------------*
+
+REPORT  ZTSKAO_MK02.
+
+*&---------------------------------------------------------------------*
+*&  TYPES  <user defined type>  TYPE  <basic type> 用法
+*&---------------------------------------------------------------------*
+
+* 定義 My_Type1為一個長度6個字元的字串
+TYPES My_Type1(6) TYPE C.
+
+* 定義 My_Type2 跟 My_Type1 具有相同的資料型態
+TYPES My_Type2 TYPE My_Type1.
+
+
+*&---------------------------------------------------------------------*
+*&  TYPES <user defined type> LIKE <abap-dictionary field> 用法
+*&---------------------------------------------------------------------*
+
+TYPES My_Type3 LIKE ZTS_KAO01-CUSTNO.
+
+
+*&---------------------------------------------------------------------*
+*&  TYPES:BEGIN OF <structure name> <field1-name >,
+*&         TYPE (LIKE) <type> <field2-name > ,
+*&         TYPE (LIKE) <type> …. ,
+*&         END OF <structure name>.
+*&---------------------------------------------------------------------*
+TYPES:
+  BEGIN OF MY_STRUC1,
+    FIELD1 TYPE C,
+    FIELD2 TYPE I,
+    FIELD3 TYPE MY_STRUC1-FIELD1,
+    FIELD4 TYPE FIELD1,
+    FIELD5 LIKE ZTS_KAO01-CUSTNO,
+  END OF MY_STRUC1.
+
+
+TYPES:
+  BEGIN OF MY_STRUC2,
+    FIELD6 TYPE C,
+    FIELD7 TYPE I,
+  END OF MY_STRUC2.
+
+
+TYPES:
+  BEGIN OF MY_STRUC3.
+    INCLUDE TYPE MY_STRUC1 AS STRUC1.
+    INCLUDE TYPE MY_STRUC2 AS STRUC2.
+TYPES:  END OF MY_STRUC3.

@@ -1,0 +1,334 @@
+REPORT  ZTSKAO_ZPPI3002A NO STANDARD PAGE HEADING
+                        LINE-SIZE 310
+                        LINE-COUNT 65(2)
+                        MESSAGE-ID zpp .
+*--------------------------------------------------------------
+* Program: Test ZPPI3002
+* Author : Yushiang Kao (Compal, IT)
+* Spec ID:
+* Type   : Program
+* Mode   : Online
+* Module : PP
+*--------------------------------------------------------------
+
+*--------------------------------------------------------------
+*              M O D I F I C A T I O N   L O G
+*
+*--------------------------------------------------------------
+* Modification Log
+* Author    : Yushiang Kao
+* Date      : 2024/01/18
+* Transport :
+* Purpose   : 收集NPI 的拆機工單交易資料，供 RD BI 彙整專案成本
+*--------------------------------------------------------------
+* Modification Log
+* Author    : Yushiang Kao
+* Date      : 2024/03/07
+* Transport : DEVK9B3BEH
+* Purpose   : Create output file TECO date(output file, 增加工單的TECO date)
+*--------------------------------------------------------------
+
+
+* 使用到的 Table
+TABLES : ZPP93, aufm, aufk, afpo, mara.
+
+* ZPP93的資料宣告 & 多放 MARA-NORMT欄位
+DATA: BEGIN OF it_zpp93 OCCURS 0.
+		INCLUDE STRUCTURE zpp93.
+DATA: normt LIKE mara-normt.	  "Industry Standard Description
+DATA: idat2 LIKE aufk-idat2.      "DEVK9B3BEH
+DATA: END OF it_zpp93.
+
+* it_out的資料宣告
+DATA: BEGIN OF it_out OCCURS 0,
+        intnr LIKE ZPP93-INTNR,   "ePM Internal Number
+        aufnr LIKE ZPP93-AUFNR,   "Order Number
+        matnr LIKE ZPP93-MATNR,   "Material Number
+        normt LIKE MARA-NORMT,    "Industry Standard Description
+        werks LIKE ZPP93-WERKS,   "Plant
+        item_pn LIKE AUFM-MATNR,  "Material Number
+        qty(13) TYPE C,
+        idat2 LIKE aufk-idat2,    "DEVK9B3BEH
+      END OF it_out.
+
+
+CONSTANTS: ctab TYPE c VALUE cl_abap_char_utilities=>horizontal_tab.
+
+
+*---------------------------------------------------------------------*
+*                S E L E C T I O N - S C R E E N                      *
+*---------------------------------------------------------------------*
+* ----------開始最外框底層色----------
+SELECTION-SCREEN BEGIN OF BLOCK box1 WITH FRAME.
+
+* ----------開始第二層內框底層色----------
+  SELECTION-SCREEN BEGIN OF BLOCK boxa WITH FRAME.
+
+* ----------使用者操作選項----------
+  SELECT-OPTIONS:
+          s_werks FOR ZPP93-werks,    "Plant
+          s_intnr FOR ZPP93-intnr,    "ePM Internal Number
+          s_aufnr FOR ZPP93-aufnr,    "Order Number
+          s_zftype FOR ZPP93-zftype,  "Function Type
+          s_lgort FOR ZPP93-lgort,    "Storage Location
+          s_matnr FOR ZPP93-matnr,    "Material Number
+          s_crdat FOR ZPP93-scrdat,   "Created On
+          s_prdat FOR ZPP93-prdat.    "TDN Process Date
+
+* ----------結束第二層內框底層色----------
+  SELECTION-SCREEN END OF BLOCK boxa.
+
+* File Path 顯示
+  PARAMETERS : p_path LIKE rlgrap-filename.
+
+* ----------結束最外框底層色----------
+SELECTION-SCREEN END OF BLOCK box1.
+
+
+*---------------------------------------------------------------------*
+*                I N I T I A L I Z A T I O N                          *
+*---------------------------------------------------------------------*
+INITIALIZATION.
+
+* File Path 的 Default 值
+  CONCATENATE '/ftproot/if' sy-mandt '/EPM/outbound/' INTO p_path.
+
+* SELECT-OPTIONS的參數用法(參考ABAP(4).ppt的進階搜尋)
+  s_zftype-sign = 'I'.
+  s_zftype-option = 'EQ'.
+  s_zftype-low = '05'.      "左側查詢(low)  右側查詢(high)
+  APPEND s_zftype.
+
+
+*-------------   S T A R T  O F  S E L E C T I O N ---------------*
+START-OF-SELECTION.
+
+* 類似C#的呼叫 Function Name
+  PERFORM get_mo.
+
+  IF NOT it_zpp93[] IS INITIAL.
+    PERFORM generate_out_data.
+    PERFORM generate_out_file.
+  ENDIF.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  GET_MO
+*&---------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+
+* 類似C#定義一個 Function —— get_mo()的概念
+FORM get_mo .
+
+* 依照 Selection criterial 撈取 ZPP93 Data 放到 it_zpp93中
+  SELECT p~intnr p~zftype p~werks p~aufnr p~matnr a~normt k~idat2
+    INTO CORRESPONDING FIELDS OF TABLE it_zpp93
+    FROM zpp93 AS p
+    INNER JOIN mara AS a ON p~matnr = a~matnr
+    INNER JOIN aufk AS k ON p~aufnr = k~aufnr               "<< DEVK9B3BEH
+  WHERE p~werks IN s_werks AND      "Plant
+        p~intnr IN s_intnr AND      "ePM Internal Number
+        p~aufnr IN s_aufnr AND      "Order Number
+        p~zftype IN s_zftype AND    "Function Type
+        p~lgort IN s_lgort AND      "Storage Location
+        p~matnr IN s_matnr AND      "Material Number
+        p~crdat IN s_crdat AND      "Created On
+        p~prdat IN s_prdat AND      "TDN Process Date
+        p~aufnr <> '' AND           "不等於已經開單
+        p~status = 'CF'.            "工單已經開立並完成 Confirm
+
+  IF sy-subrc <> 0.
+    MESSAGE s000 WITH 'No dismantle MO found'.
+    LEAVE LIST-PROCESSING.
+  ENDIF.
+ENDFORM.                    " GET_MO
+
+
+*&---------------------------------------------------------------------*
+*&      Form  GENERATE_OUT_DATA
+*&---------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------
+
+* 類似C#定義一個 Function —— generate_out_data()的概念
+FORM generate_out_data .
+
+* IT_AUFM: MO transaction
+  DATA: BEGIN OF it_aufm OCCURS 0 ,
+          matnr LIKE aufm-matnr,    "Material Number
+          bwart LIKE aufm-bwart,    "Movement Type(Inventory Management)
+          menge LIKE aufm-menge,    "Quantity
+        END OF it_aufm.
+
+* IT_Qty: collect transaction by PN
+  DATA: BEGIN OF it_qty OCCURS 0,
+          matnr LIKE aufm-matnr,    "Material Number
+          menge LIKE aufm-menge,    "Quantity
+        END OF it_qty.
+
+*  ------寫入 it_zpp93 資料 ------
+  LOOP AT it_zpp93.
+    CLEAR it_out.
+    MOVE-CORRESPONDING it_zpp93 TO it_out.
+
+    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+      EXPORTING
+        input  = it_zpp93-aufnr     "Order Number
+      IMPORTING
+        output = it_out-aufnr.      "Order Number
+
+    CALL FUNCTION 'CONVERSION_EXIT_MATN1_OUTPUT'
+      EXPORTING
+        input  = it_zpp93-matnr     "Material Number
+      IMPORTING
+        output = it_out-matnr.      "Material Number
+
+* 依照 it_aufm 查詢
+    SELECT matnr bwart menge
+      INTO TABLE it_aufm            "類似C#的 dt.Load()
+      FROM aufm
+      WHERE aufnr = it_zpp93-aufnr.
+
+    IF sy-subrc = 0.
+      REFRESH it_qty.
+
+* ------寫入 it_aufm 資料------
+      LOOP AT it_aufm.
+        it_qty-matnr = it_aufm-matnr.
+
+* 增加庫存 movement type 101/262為正
+        IF it_aufm-bwart = '101' OR it_aufm-bwart = '262'.
+          it_qty-menge = it_aufm-menge.
+
+* 減少庫存 movement type 102/261為負
+        ELSEIF it_aufm-bwart = '102' OR it_aufm-bwart = '261'.
+          it_qty-menge = it_aufm-menge * -1.
+
+        ENDIF.
+
+        COLLECT it_qty.
+      ENDLOOP.
+
+*  ------寫入 it_qty 資料 ------
+      LOOP AT it_qty.
+
+        CALL FUNCTION 'CONVERSION_EXIT_MATN1_OUTPUT'
+          EXPORTING
+            input  = it_qty-matnr
+          IMPORTING
+            output = it_out-item_pn.
+
+        IF it_qty-menge >= 0.
+          WRITE it_qty-menge TO it_out-qty
+              DECIMALS 0 LEFT-JUSTIFIED NO-GROUPING.
+        ELSE.
+          it_qty-menge = it_qty-menge * -1.
+          WRITE it_qty-menge TO it_out-qty
+             DECIMALS 0 LEFT-JUSTIFIED NO-GROUPING.
+          CONCATENATE '-' it_out-qty INTO it_out-qty.
+        ENDIF.
+
+        APPEND it_out.
+      ENDLOOP.
+    ENDIF.
+  ENDLOOP.
+ENDFORM.                    " GENERATE_OUT_DATA
+
+
+*&---------------------------------------------------------------------*
+*&      Form  GENERATE_OUT_FILE
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+
+FORM generate_out_file .
+  DATA w_file(35) TYPE c.
+  DATA: w_string(1000) TYPE c.
+  DATA: dsn LIKE rlgrap-filename.
+  data: w_twcn(2) type c.
+
+  DATA: w_teco_date(10) TYPE C.     "DEVK9B3BEH
+  
+* 168/169為TW
+  if sy-mandt = '168' or sy-mandt = '169'.
+    w_twcn = 'TW'.
+
+* 888為CN
+  elseif sy-mandt = '888'.
+    w_twcn = 'CN'.
+
+* 899為VN
+  elseif sy-mandt = '899'.
+    w_twcn = 'VN'.
+  endif.
+
+* Output File Name格式
+  CONCATENATE 'SAPZP03_' w_twcn '_' sy-datum sy-uzeit '.txt'
+         INTO w_file.
+  CONCATENATE p_path w_file INTO dsn.
+
+  OPEN DATASET dsn FOR OUTPUT IN TEXT MODE ENCODING DEFAULT.
+
+  IF sy-subrc = 0.
+
+    CONCATENATE 'SN#' 'MO#' 'MO PN' 'Model' 'Plant'
+                'Item PN' 'Item Qty' 'TECO date'
+                INTO w_string SEPARATED BY ctab.
+    TRANSFER w_string TO dsn.
+
+*  ------寫入 it_out 資料 ------
+    LOOP AT it_out.
+	
+      "DEVK9B3BEH >>
+      PERFORM convert_date_format USING it_out-idat2
+                                  CHANGING w_teco_date.
+
+      CONCATENATE it_out-intnr    "ePM Internal Number
+                  it_out-aufnr    "Order Number
+                  it_out-matnr    "Material Number
+                  it_out-normt    "Industry Standard Description
+                  it_out-werks    "Plant
+                  it_out-item_pn  "Material Number
+                  it_out-qty
+				  w_teco_date     "<< DEVK9B3BEH
+                  INTO w_string SEPARATED BY ctab.
+      TRANSFER w_string TO dsn.
+    ENDLOOP.
+    CLOSE DATASET dsn.
+
+  ELSE.
+    MESSAGE s000 WITH 'Open PP file error'.
+  ENDIF.
+
+
+ENDFORM.                    " GENERATE_OUT_FILE
+
+
+*&---------------------------------------------------------------------*
+*&      Form  convert_date_format
+*&---------------------------------------------------------------------*
+*      DEVK9B3BEH
+*----------------------------------------------------------------------*
+*      -->PA_INDATE  text
+*      <--PA_OUTDATE text
+*----------------------------------------------------------------------*
+FORM convert_date_format  USING    pa_indate LIKE sy-datum
+                          CHANGING pa_outdate.
+  IF pa_indate IS NOT INITIAL.
+    CONCATENATE pa_indate+0(4) '/' pa_indate+4(2) '/' pa_indate+6(2)
+      INTO pa_outdate.
+  ELSE.
+    CLEAR pa_outdate.
+  ENDIF.
+
+ENDFORM.                    "convert_date_format

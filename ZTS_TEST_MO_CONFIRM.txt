@@ -1,0 +1,180 @@
+REPORT zts_test_mo_confirm NO STANDARD PAGE HEADING
+                           LINE-SIZE 255
+                           LINE-COUNT 65(2)
+                           MESSAGE-ID zpp .
+*--------------------------------------------------------------
+* Description:
+*   This program to generate WO confirmation report.
+*--------------------------------------------------------------
+
+*--------------------------------------------------------------
+*              M O D I F I C A T I O N   L O G
+*
+*--------------------------------------------------------------
+* Modification Log
+* Author    : Yushiang Kao
+* Date      : 2024/04/15
+* Transport :
+* Purpose   : Order confirmation report
+*--------------------------------------------------------------
+
+* Tables used
+TABLES : aufm,    "Good movement for order
+         affw,    "Goods Movements with Errors from Confirmations
+         makt,    "Material description
+         afpo.    "Order item
+
+* Internal Table: it_data
+DATA: BEGIN OF it_data OCCURS 0,
+        aufnr LIKE aufm-aufnr,    "Order Number(WO)
+        budat LIKE aufm-budat,    "Posting Date in the Doucument
+        matnr LIKE aufm-matnr,    "Material Number(Component)
+        bwart LIKE aufm-bwart,    "Movement Type (Inventory Management)
+        menge LIKE aufm-menge,    "Quantity
+        meins LIKE aufm-meins,    "Base Unit of Measure
+        maktx LIKE makt-maktx,    "Material Description (Short Text)
+        werks LIKE aufm-werks,    "Plant
+        lgort LIKE aufm-lgort,    "Storage Location
+        fgpn  LIKE aufm-matnr,    "FG PN
+        matkl LIKE mara-matkl,    "Material Group
+      END OF it_data.
+
+* Internal Table: it_out
+DATA: it_out LIKE it_data OCCURS 0 WITH HEADER LINE.
+
+
+*---------------------------------------------------------------------*
+*                S E L E C T I O N - S C R E E N                      *
+*---------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK box1 WITH FRAME.
+
+SELECT-OPTIONS: s_werks FOR aufm-werks,     "Plant
+                s_lgort FOR aufm-lgort,     "Location
+                s_aufnr FOR aufm-aufnr,     "WO
+                s_budat FOR aufm-budat DEFAULT sy-datum,    "Posting date
+                s_matnr FOR aufm-matnr,     "FG PN
+                s_compo FOR aufm-matnr.     "Component
+
+SELECTION-SCREEN END OF BLOCK box1.
+
+
+*-------------   S T A R T  O F  S E L E C T I O N ---------------*
+START-OF-SELECTION.
+
+  IF s_aufnr AND s_budat IS INITIAL.
+    MESSAGE s000 WITH 'WO & Posting date, at least input one.'.
+    LEAVE LIST-PROCESSING.
+
+  ELSE.
+    PERFORM get_po.
+    PERFORM filter_data.
+    PERFORM report_data.
+
+  ENDIF.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  get_po
+*&---------------------------------------------------------------------*
+*       Get data from AUFM + MAKT( matnr = aufm-matnr and spras = 'E' )
+*       Get data from AFFW + MAKT( matnr = aufm-matnr and spras = 'E' )
+*----------------------------------------------------------------------*
+FORM get_po.
+
+  "AUFM Material Number
+  SELECT a~budat a~aufnr a~matnr m~maktx a~menge f~matnr AS fgpn r~matkl
+    INTO CORRESPONDING FIELDS OF TABLE it_data
+    FROM aufm AS a
+    INNER JOIN makt AS m ON a~matnr = m~matnr AND
+                            m~spras = 'E'
+    INNER JOIN afpo AS f ON a~aufnr = f~aufnr
+    INNER JOIN mara AS r ON a~matnr = r~matnr
+    WHERE a~werks IN s_werks AND      "AUFM~WERKS in Plant
+          a~lgort IN s_lgort AND      "AUFM~LGORT in location
+          a~budat IN s_budat AND      "BUDAT in Posting Date
+          a~aufnr IN s_aufnr AND      "AUFNR in WO
+          "f~matnr IN s_matnr OR      "MATNR in  FG PN
+          ( a~matnr IN s_matnr OR a~matnr IN s_compo ).         "MATNR in  Component
+
+
+* -----------------------------------------
+
+  "AFFW Error Material Number
+  SELECT a~budat a~aufnr a~matnr m~maktx a~erfmg AS menge r~matkl
+    APPENDING CORRESPONDING FIELDS OF TABLE it_data
+    FROM affw AS a
+    INNER JOIN makt AS m ON a~matnr = m~matnr AND
+                            m~spras = 'E'
+    INNER JOIN afpo AS f ON a~aufnr = f~aufnr
+    INNER JOIN mara AS r ON a~matnr = r~matnr
+    WHERE a~werks IN s_werks AND      "AUFM~WERKS in Plant
+          a~lgort IN s_lgort AND      "AUFM~LGORT in location
+          a~budat IN s_budat AND      "BUDAT in Posting Date
+          a~aufnr IN s_aufnr AND      "AUFNR in WO
+          "f~matnr IN s_matnr OR       "MATNR in  FG PN
+          ( a~matnr IN s_matnr OR a~matnr IN s_compo ).         "MATNR in  Component
+
+  IF  sy-subrc <> 0.
+    MESSAGE s000 WITH 'No PO Data Found'.
+    LEAVE LIST-PROCESSING.
+  ENDIF.
+
+ENDFORM.                    "get_po
+
+
+*&---------------------------------------------------------------------*
+*&      Form  Filter_data
+*&---------------------------------------------------------------------*
+*       IF selection criterial  FG PN is not empty, Check the MO FG. (AFPO-MATNR)
+*       IF MO FG is not in FG PN, delete this MO material document.
+*----------------------------------------------------------------------*
+FORM filter_data.
+
+  IF s_matnr IS INITIAL.
+    EXIT.
+  ENDIF.
+
+  LOOP AT it_data.
+
+*IF selection criterial  FG PN is not empty, Check the MO FG. (AFPO-MATNR)
+    IF NOT it_data-matnr IN s_matnr.
+      DELETE it_data.
+    ENDIF.
+
+  ENDLOOP.
+
+
+ENDFORM.                    "Filter_data
+
+
+
+*&---------------------------------------------------------------------*
+*&      Form  report_data
+*&---------------------------------------------------------------------*
+*       Collect IT_Data to IT_Out by AUFNR BUDAT MATNR
+*       Report it_out
+*----------------------------------------------------------------------*
+FORM report_data.
+
+  it_out[] = it_data[].
+
+  "Title
+  WRITE: /1(8) 'posting date' COLOR 1,       "budat
+          10(12) 'MO Number' COLOR 2,        "aufnr
+          24(18) 'PN' COLOR 3,               "matnr
+          44(9) 'Material Group' COLOR 4,    "matkl
+          55(40) 'Description' COLOR 5,      "maktx
+          97(13) 'confirm Qty' COLOR 6.      "menge/erfmg
+  ULINE.
+
+  LOOP AT it_out.
+
+    WRITE: / it_out-budat UNDER 'posting date',
+             it_out-aufnr UNDER 'MO Number',
+             it_out-matnr UNDER 'PN',
+             it_out-matkl UNDER 'Material Group',
+             it_out-maktx UNDER 'Description',
+             it_out-menge UNDER 'confirm Qty'.
+  ENDLOOP.
+
+ENDFORM.                    "report_data

@@ -1,0 +1,132 @@
+Practice ElementData WorkArea Intern
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK01
+*& 參考文件: ABAP(2).ppt
+*&---------------------------------------------------------------------*
+
+REPORT  ZTSKAO_MK01.
+
+*&---------------------------------------------------------------------*
+*&  Element Data Object 單值變數練習
+*&---------------------------------------------------------------------*
+
+* 宣告變數
+DATA: A(4) TYPE C,
+      B LIKE ZTS_KAO01-CUSTNO,
+      C(5) TYPE I,
+      D(8),
+      E(4) TYPE P DECIMALS 3,
+      F(5) TYPE C VALUE 'GG'.
+
+* 賦予值
+A = 'Test'.
+B = '10038320'.
+C = 9487.
+D = 'TestWord'.
+E = 4887.
+
+* 寫出值
+WRITE: A,
+       / B,
+       / C,
+       / D,
+       / E,
+       / F.
+
+* 空行 & 實線
+SKIP.
+ULINE.
+
+* 宣告並賦予值
+CONSTANTS pi TYPE P DECIMALS 4 VALUE '3.1415'.
+
+* 寫出值
+WRITE pi.
+
+* 空行 & 實線
+SKIP.
+ULINE.
+
+*&---------------------------------------------------------------------*
+*&  Work Area 練習
+*&---------------------------------------------------------------------*
+TYPES:
+BEGIN OF My_Struc1,
+  Field1(10) TYPE C,
+  Field2 TYPE I,
+  Field3(5) TYPE N,
+ END OF My_Struc1.
+
+DATA WA_MyData1 TYPE My_Struc1.
+
+DATA:
+     BEGIN OF My_Struc2,
+       Field4(10) TYPE C,
+       Field5 TYPE I,
+     END OF My_Struc2.
+
+
+*&---------------------------------------------------------------------*
+*&  Internal Table 練習
+*&---------------------------------------------------------------------*
+
+* 第一種用法
+DATA: itab1 TYPE My_Struc1 OCCURS 0 WITH HEADER LINE.
+DATA: itab2 LIKE My_Struc2 OCCURS 0 WITH HEADER LINE.
+
+* 第二種用法
+DATA: BEGIN OF itab OCCURS 0,
+        TEXT1 TYPE C,
+        TEXT2 TYPE C,
+        TEXT3 TYPE C,
+      END OF itab.
+
+* 第三種用法
+TYPES: BEGIN OF LINE,
+        COLUMN1 TYPE I,
+        COLUMN2 TYPE I,
+        COLUMN3 TYPE I,
+       END OF LINE.
+
+
+*&---------------------------------------------------------------------*
+*&  ABAP(2).ppt 練習一
+*
+*1. 單一變數
+*         宣告兩個單一變數:
+*         a. 一個長度5 型態為character預設值為’Hello’
+*         b. 另一個長度8 型態為p 小數點5位
+*2. Work Area
+*       宣告兩個欄位的Work Area,欄位型態不限
+*3. Internal Table
+*       宣告兩個 Internal Table
+*         a. 一個利用現有的結構structure來宣告
+*         b. 另一個自己宣告三個欄位的 Internal Table
+*&---------------------------------------------------------------------*
+
+* 1. 單一變數
+DATA:
+      Practice1(5) TYPE C VALUE 'Hello',
+      Practice2(8) TYPE P DECIMALS 5.
+
+
+* 2. Work Area
+TYPES:
+BEGIN OF My_Practice1,
+  Field1(10) TYPE C,
+  Field2 TYPE I,
+ END OF My_Practice1.
+
+
+* 3. Internal Table
+* a
+DATA: itP1 TYPE My_Practice1 OCCURS 0 WITH HEADER LINE.
+
+* b
+DATA: BEGIN OF itP2 OCCURS 0,
+        COLUMN_P1 TYPE C,
+        COLUMN_P2 TYPE C,
+        COLUMN_P3 TYPE C,
+      END OF itP2.

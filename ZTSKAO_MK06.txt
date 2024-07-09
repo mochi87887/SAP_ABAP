@@ -1,0 +1,118 @@
+Practice erp_i.ppt HW(G、H)
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZTSKAO_MK06
+*& erp_i.ppt 的練習G 練習H
+*&---------------------------------------------------------------------*
+
+REPORT  ztskao_mk06 NO STANDARD PAGE HEADING
+                             LINE-SIZE 310
+                             LINE-COUNT 65(2)
+                             MESSAGE-ID zpp.
+
+* 宣告it_emp 結構和 ZYY85_EMP相同
+DATA: it_emp LIKE zyy85_emp OCCURS 0 WITH HEADER LINE.
+
+* 使用的資料表
+TABLES: zyy85_emp.
+
+
+* ----------區塊1----------
+SELECTION-SCREEN BEGIN OF BLOCK box1 WITH FRAME.
+
+PARAMETERS user_id TYPE zyy85_emp-empid DEFAULT 10000.
+
+SELECTION-SCREEN END OF BLOCK box1.
+
+
+* ----------區塊2----------
+SELECTION-SCREEN BEGIN OF BLOCK box2 WITH FRAME.
+
+SELECT-OPTIONS user_id2 FOR zyy85_emp-empid.
+
+SELECTION-SCREEN END OF BLOCK box2.
+
+
+*-------------   S T A R T  O F  S E L E C T I O N ---------------
+START-OF-SELECTION.
+
+* 執行查詢員工資料的方法s
+  PERFORM select_empid.
+
+  PERFORM select_empid2.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  select_EMPID
+*&---------------------------------------------------------------------*
+*       輸入員工ID查詢員工資料
+*----------------------------------------------------------------------*
+FORM select_empid.
+
+
+  SELECT *
+  FROM zyy85_emp
+  INTO CORRESPONDING FIELDS OF TABLE it_emp
+  WHERE empid = user_id.
+
+* 印出標題
+  WRITE: /1(20) 'NAME' COLOR 1,
+          23(4) 'SEX' COLOR 2,
+          29(8) 'BIRTH' COLOR 3,
+          41(6) 'CLASS' COLOR 4,
+          49(5) 'EMPID' COLOR 5,
+          56(5) 'DEPID' COLOR 6.
+  ULINE.
+
+
+  LOOP AT it_emp.
+
+    "印出員工資料
+    WRITE: / it_emp-name UNDER 'NAME',
+             it_emp-sex UNDER 'SEX',
+             it_emp-birth UNDER 'BIRTH',
+             it_emp-class UNDER 'CLASS',
+             it_emp-empid UNDER 'EMPID',
+             it_emp-depid UNDER 'DEPID'.
+  ENDLOOP.
+
+  SKIP 3.
+
+ENDFORM.                    "select_EMPID
+
+
+*&---------------------------------------------------------------------*
+*&      Form  SELECT_EMPID2
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM select_empid2.
+
+  SELECT *
+  FROM zyy85_emp
+  INTO CORRESPONDING FIELDS OF TABLE it_emp
+  WHERE empid IN user_id2.
+
+
+* 印出標題
+  WRITE: /1(20) 'NAME' COLOR 1,
+          23(4) 'SEX' COLOR 2,
+          29(8) 'BIRTH' COLOR 3,
+          41(6) 'CLASS' COLOR 4,
+          49(5) 'EMPID' COLOR 5,
+          56(5) 'DEPID' COLOR 6.
+  ULINE.
+
+  LOOP AT it_emp.
+
+    "印出員工資料
+    WRITE: / it_emp-name UNDER 'NAME',
+             it_emp-sex UNDER 'SEX',
+             it_emp-birth UNDER 'BIRTH',
+             it_emp-class UNDER 'CLASS',
+             it_emp-empid UNDER 'EMPID',
+             it_emp-depid UNDER 'DEPID'.
+  ENDLOOP.
+
+ENDFORM.                    "select_EMPID2
